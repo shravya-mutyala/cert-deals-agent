@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certification Coupon Hunter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .profile-section,
+        .offers-section {
+            margin-bottom: 40px;
+        }
+
+        .offer-card {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+
+        .offer-card.high-match {
+            border-left: 5px solid #4CAF50;
+        }
+
+        .offer-card.medium-match {
+            border-left: 5px solid #FF9800;
+        }
+
+        .match-score {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .form-group {
+            margin: 15px 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+        }
+
+        button {
+            background: #007cba;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #005a87;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>🎯 Certification Coupon Hunter</h1>
+        <p>Find the best certification discounts matched to your profile</p>
+    </div>
+
+    <div class="profile-section">
+        <h2>Your Profile</h2>
+        <form id="profileForm">
+            <div class="form-group">
+                <label for="userId">User ID:</label>
+                <input type="text" id="userId" placeholder="Enter your unique ID" required>
+            </div>
+
+            <div class="form-group">
+                <label for="location">Location:</label>
+                <input type="text" id="location" placeholder="e.g., United States, India, Europe">
+            </div>
+
+            <div class="form-group">
+                <label for="studentStatus">Student Status:</label>
+                <select id="studentStatus">
+                    <option value="false">Not a student</option>
+                    <option value="true">Current student</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="targetCerts">Target Certifications (comma-separated):</label>
+                <input type="text" id="targetCerts" placeholder="e.g., AWS Solutions Architect, Salesforce Admin">
+            </div>
+
+            <div class="form-group">
+                <label for="preferredProviders">Preferred Providers (comma-separated):</label>
+                <input type="text" id="preferredProviders" placeholder="e.g., AWS, Salesforce, Microsoft">
+            </div>
+
+            <button type="submit">Save Profile & Find Offers</button>
+        </form>
+    </div>
+
+    <div class="offers-section">
+        <h2>Matched Offers</h2>
+        <div id="offersContainer">
+            <p class="loading">Save your profile to see matched offers...</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'YOUR_API_GATEWAY_URL'; // Replace with actual API Gateway URL
+
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const userId = document.getElementById('userId').value;
+            const location = document.getElementById('location').value;
+            const studentStatus = document.getElementById('studentStatus').value === 'true';
+            const targetCerts = document.getElementById('targetCerts').value.split(',').map(s => s.trim()).filter(s => s);
+            const preferredProviders = document.getElementById('preferredProviders').value.split(',').map(s => s.trim()).filter(s => s);
+
+            // Save profile
+            try {
+                document.getElementById('offersContainer').innerHTML = '<p class="loading">Saving profile...</p>';
+
+                const profileResponse = await fetch(`${API_BASE}/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        location,
+                        student_status: studentStatus,
+                        target_certifications: targetCerts,
+                        preferred_providers: preferredProviders
+                    })
+                });
+
+                if (!profileResponse.ok) throw new Error('Failed to save profile');
+
+                // Get matched offers
+                document.getElementById('offersContainer').innerHTML = '<p class="loading">Finding matched offers...</p>';
+
+                const offersResponse = await fetch(`${API_BASE}/offers?user_id=${userId}`);
+                if (!offersResponse.ok) throw new Error('Failed to get offers');
+
+                const offersData = await offersResponse.json();
+                displayOffers(offersData.matched_offers);
+
+            } catch (error) {
+                document.getElementById('offersContainer').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        });
+
+        function displayOffers(offers) {
+            const container = document.getElementById('offersContainer');
+
+            if (!offers || offers.length === 0) {
+                container.innerHTML = '<p>No matching offers found. Check back later!</p>';
+                return;
+            }
+
+            const offersHtml = offers.map(offer => {
+                const matchClass = offer.match_score > 0.8 ? 'high-match' : 'medium-match';
+                const reasons = offer.match_reasons ? offer.match_reasons.join(', ') : 'Good match';
+
+                return `
+                    <div class="offer-card ${matchClass}">
+                        <h3>${offer.provider} - ${offer.cert_type || 'Certification Offer'}</h3>
+                        <p><strong>Discount:</strong> ${offer.discount || 'See details'}</p>
+                        <p><strong>Eligibility:</strong> ${offer.eligibility || 'Check requirements'}</p>
+                        <p><strong>Match Score:</strong> <span class="match-score">${Math.round(offer.match_score * 100)}%</span></p>
+                        <p><strong>Why it matches:</strong> ${reasons}</p>
+                        <p><strong>Source:</strong> <a href="${offer.source_url}" target="_blank">View Details</a></p>
+                        <small>Discovered: ${new Date(offer.discovered_at).toLocaleDateString()}</small>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = offersHtml;
+        }
+
+        // Demo mode - show sample offers if API not available
+        if (API_BASE === 'YOUR_API_GATEWAY_URL') {
+            setTimeout(() => {
+                const sampleOffers = [
+                    {
+                        provider: 'AWS',
+                        cert_type: 'Solutions Architect Associate',
+                        discount: '50% off exam voucher',
+                        eligibility: 'Students and first-time test takers',
+                        match_score: 0.9,
+                        match_reasons: ['Matches target certification', 'Student discount available'],
+                        source_url: 'https://aws.amazon.com/training/',
+                        discovered_at: new Date().toISOString()
+                    },
+                    {
+                        provider: 'Salesforce',
+                        cert_type: 'Administrator',
+                        discount: 'Free retake voucher',
+                        eligibility: 'Trailhead users with 50+ badges',
+                        match_score: 0.75,
+                        match_reasons: ['Preferred provider match'],
+                        source_url: 'https://trailhead.salesforce.com/',
+                        discovered_at: new Date().toISOString()
+                    }
+                ];
+
+                document.getElementById('offersContainer').innerHTML =
+                    '<p><em>Demo Mode - Sample offers shown below:</em></p>';
+                displayOffers(sampleOffers);
+            }, 1000);
+        }
+    </script>
+</body>
+
+</html>
