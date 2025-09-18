@@ -1,7 +1,8 @@
 import json
 import boto3
 import os
-from datetime import datetime
+from datetime import datetime, timezone
+from decimal import Decimal
 from boto3.dynamodb.conditions import Key
 
 dynamodb = boto3.resource('dynamodb')
@@ -106,8 +107,8 @@ def create_or_update_user(event):
         # Create user profile
         user_profile = {
             'user_id': user_id,
-            'created_at': datetime.utcnow().isoformat(),
-            'updated_at': datetime.utcnow().isoformat(),
+            'created_at': datetime.now(timezone.utc).isoformat(),
+            'updated_at': datetime.now(timezone.utc).isoformat(),
             'location': body.get('location', ''),
             'student_status': body.get('student_status', False),
             'current_certifications': body.get('current_certifications', []),

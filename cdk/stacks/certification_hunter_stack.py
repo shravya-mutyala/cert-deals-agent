@@ -1,9 +1,11 @@
 from aws_cdk import (
     Stack,
+    CfnOutput,
     aws_dynamodb as dynamodb,
     aws_lambda as _lambda,
     aws_apigateway as apigateway,
     aws_s3 as s3,
+    aws_s3_deployment as s3deploy,
     aws_events as events,
     aws_events_targets as targets,
     aws_iam as iam,
@@ -11,6 +13,7 @@ from aws_cdk import (
     RemovalPolicy
 )
 from constructs import Construct
+import os
 
 class CertificationHunterStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -34,12 +37,14 @@ class CertificationHunterStack(Stack):
             removal_policy=RemovalPolicy.DESTROY
         )
 
-        # S3 Bucket for assets
+        # S3 Bucket for static website hosting
         self.assets_bucket = s3.Bucket(
             self, "AssetsBucket",
-            bucket_name="certification-hunter-assets",
             removal_policy=RemovalPolicy.DESTROY,
-            auto_delete_objects=True
+            auto_delete_objects=True,
+            website_index_document="index.html",
+            public_read_access=True,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ACLS
         )
 
         # Lambda Functions
@@ -122,3 +127,48 @@ class CertificationHunterStack(Stack):
             schedule=events.Schedule.cron(hour="6", minute="0")
         )
         rule.add_target(targets.LambdaFunction(self.scraper_function))
+        
+        # Deploy frontend
+        self._deploy_frontend()
+        
+        # Stack outputs
+        CfnOutput(
+            self, "CertificationHunterAPIEndpoint",
+            value=self.api.url,
+            description="API Gateway endpoint URL"
+        )
+        
+        CfnOutput(
+            self, "AssetsBucketName", 
+            value=self.assets_bucket.bucket_name,
+            description="S3 bucket for frontend assets"
+        )
+        
+        CfnOutput(
+            self, "OffersTableName",
+            value=self.offers_table.table_name,
+            description="DynamoDB table for offers"
+        )
+        
+        CfnOutput(
+            self, "UsersTableName",
+            value=self.users_table.table_name,
+            description="DynamoDB table for users"
+        )
+        
+        # Website URL output
+        CfnOutput(
+            self, "WebsiteURL",
+            value=self.assets_bucket.bucket_website_url,
+            description="Website URL"
+        )
+
+    def _deploy_frontend(self):
+        """Deploy frontend to S3"""
+        
+        # Deploy all frontend assets to S3
+        s3deploy.BucketDeployment(
+            self, "DeployFrontend",
+            sources=[s3deploy.Source.asset("frontend")],
+            destination_bucket=self.assets_bucket
+        )

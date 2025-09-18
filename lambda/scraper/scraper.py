@@ -2,7 +2,8 @@ import json
 import boto3
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 import hashlib
 import os
 
@@ -25,6 +26,22 @@ def handler(event, context):
                 'name': 'Salesforce Trailhead',
                 'url': 'https://trailhead.salesforce.com/en/credentials/certification-vouchers/',
                 'provider': 'Salesforce'
+            },
+
+            {
+                'name': 'Google Cloud Training',
+                'url': 'https://cloud.google.com/training/certification',
+                'provider': 'Google Cloud'
+            },
+            {
+                'name': 'Databricks Academy',
+                'url': 'https://www.databricks.com/learn/certification',
+                'provider': 'Databricks'
+            },
+            {
+                'name': 'Azure Fundamentals',
+                'url': 'https://azure.microsoft.com/en-us/certifications/',
+                'provider': 'Azure'
             }
         ]
         
@@ -80,6 +97,13 @@ def scrape_source(source):
             offers = extract_aws_offers(soup, source)
         elif source['provider'] == 'Salesforce':
             offers = extract_salesforce_offers(soup, source)
+
+        elif source['provider'] == 'Google Cloud':
+            offers = extract_gcp_offers(soup, source)
+        elif source['provider'] == 'Databricks':
+            offers = extract_databricks_offers(soup, source)
+        elif source['provider'] == 'Azure':
+            offers = extract_azure_offers(soup, source)
             
     except Exception as e:
         print(f"Error scraping {source['name']}: {str(e)}")
@@ -100,7 +124,7 @@ def extract_aws_offers(soup, source):
             'provider': source['provider'],
             'source_url': source['url'],
             'raw_text': element.strip(),
-            'discovered_at': datetime.utcnow().isoformat()
+            'discovered_at': datetime.now(timezone.utc).isoformat()
         }
         offers.append(offer)
     
@@ -110,15 +134,90 @@ def extract_salesforce_offers(soup, source):
     """Extract Salesforce-specific offers"""
     offers = []
     
-    # Similar pattern for Salesforce
-    voucher_elements = soup.find_all(text=lambda text: text and 'voucher' in text.lower())
+    # Look for voucher and discount keywords
+    voucher_elements = soup.find_all(text=lambda text: text and any(
+        keyword in text.lower() for keyword in ['voucher', 'discount', 'free', 'promo', 'trailhead']
+    ))
     
     for element in voucher_elements[:3]:
         offer = {
             'provider': source['provider'],
             'source_url': source['url'],
             'raw_text': element.strip(),
-            'discovered_at': datetime.utcnow().isoformat()
+            'discovered_at': datetime.now(timezone.utc).isoformat()
+        }
+        offers.append(offer)
+    
+    return offers
+
+
+
+def extract_gcp_offers(soup, source):
+    """Extract Google Cloud certification offers"""
+    offers = []
+    
+    # Look for GCP-specific keywords
+    gcp_elements = soup.find_all(text=lambda text: text and any(
+        keyword in text.lower() for keyword in [
+            'discount', 'free', 'voucher', 'credit', 'promo', 'student',
+            'associate', 'professional', 'cloud', 'google'
+        ]
+    ))
+    
+    for element in gcp_elements[:4]:
+        offer = {
+            'provider': source['provider'],
+            'source_url': source['url'],
+            'raw_text': element.strip(),
+            'discovered_at': datetime.now(timezone.utc).isoformat()
+        }
+        offers.append(offer)
+    
+    return offers
+
+def extract_databricks_offers(soup, source):
+    """Extract Databricks certification offers"""
+    offers = []
+    
+    # Look for Databricks-specific keywords
+    databricks_elements = soup.find_all(text=lambda text: text and any(
+        keyword in text.lower() for keyword in [
+            'discount', 'free', 'voucher', 'promo', 'student', 'academy',
+            'associate', 'professional', 'data engineer', 'data scientist',
+            'machine learning', 'spark', 'lakehouse'
+        ]
+    ))
+    
+    for element in databricks_elements[:3]:
+        offer = {
+            'provider': source['provider'],
+            'source_url': source['url'],
+            'raw_text': element.strip(),
+            'discovered_at': datetime.now(timezone.utc).isoformat()
+        }
+        offers.append(offer)
+    
+    return offers
+
+def extract_azure_offers(soup, source):
+    """Extract Azure certification offers"""
+    offers = []
+    
+    # Look for Azure-specific keywords
+    azure_elements = soup.find_all(text=lambda text: text and any(
+        keyword in text.lower() for keyword in [
+            'discount', 'free', 'voucher', 'promo', 'student', 'azure',
+            'fundamentals', 'associate', 'expert', 'specialty',
+            'administrator', 'developer', 'architect', 'security'
+        ]
+    ))
+    
+    for element in azure_elements[:4]:
+        offer = {
+            'provider': source['provider'],
+            'source_url': source['url'],
+            'raw_text': element.strip(),
+            'discovered_at': datetime.now(timezone.utc).isoformat()
         }
         offers.append(offer)
     
@@ -134,14 +233,22 @@ def process_offer_with_ai(offer):
     Provider: {offer['provider']}
     
     Extract:
-    1. Discount amount/percentage
-    2. Eligibility requirements
-    3. Expiry date (if mentioned)
-    4. Certification type
-    5. Geographic restrictions
-    6. Confidence score (0-1)
+    1. Discount amount/percentage (e.g., "50% off", "Free", "$100 credit")
+    2. Eligibility requirements (e.g., "Students", "First-time test takers", "Employees")
+    3. Expiry date (if mentioned, format as YYYY-MM-DD)
+    4. Certification type/level (e.g., "Fundamentals", "Associate", "Professional", "Expert")
+    5. Specific certification name (e.g., "AWS Solutions Architect", "Azure Administrator", "GCP Professional Cloud Architect")
+    6. Geographic restrictions (e.g., "Global", "US only", "EU residents")
+    7. Confidence score (0-1, how confident you are in the extraction)
     
-    Return as JSON with these fields: discount, eligibility, expiry, cert_type, geo_restrictions, confidence
+    Provider-specific context:
+    - AWS: Look for Solutions Architect, Developer, SysOps, Security, Data Analytics, Machine Learning
+    - Microsoft/Azure: Look for Fundamentals (AZ-900), Administrator (AZ-104), Developer (AZ-204), Architect (AZ-305)
+    - Google Cloud: Look for Associate Cloud Engineer, Professional Cloud Architect, Professional Data Engineer
+    - Salesforce: Look for Administrator, Platform Developer, Sales Cloud, Service Cloud
+    - Databricks: Look for Data Engineer Associate/Professional, Data Scientist Associate/Professional
+    
+    Return as JSON with these fields: discount, eligibility, expiry, cert_type, cert_name, geo_restrictions, confidence
     """
     
     try:
@@ -161,6 +268,10 @@ def process_offer_with_ai(offer):
         try:
             structured_data = json.loads(ai_analysis)
             
+            # Convert float values to Decimal for DynamoDB
+            if 'confidence' in structured_data and isinstance(structured_data['confidence'], (int, float)):
+                structured_data['confidence'] = Decimal(str(structured_data['confidence']))
+            
             # Create final offer object
             processed_offer = {
                 'offer_id': generate_offer_id(offer),
@@ -168,7 +279,7 @@ def process_offer_with_ai(offer):
                 'source_url': offer['source_url'],
                 'raw_text': offer['raw_text'],
                 'discovered_at': offer['discovered_at'],
-                'processed_at': datetime.utcnow().isoformat(),
+                'processed_at': datetime.now(timezone.utc).isoformat(),
                 **structured_data
             }
             

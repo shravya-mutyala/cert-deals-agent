@@ -1,13 +1,39 @@
 #!/bin/bash
 
-echo "🚀 Deploying Certification Coupon Hunter..."
+echo "🚀 Deploying Certification Coupon Hunter to AWS..."
+
+# Check prerequisites
+echo "Checking prerequisites..."
+if ! command -v aws &> /dev/null; then
+    echo "❌ AWS CLI not found. Please install AWS CLI and configure credentials."
+    exit 1
+fi
+
+if ! command -v cdk &> /dev/null; then
+    echo "❌ CDK not found. Please install: npm install -g aws-cdk"
+    exit 1
+fi
+
+if ! command -v python3 &> /dev/null; then
+    echo "❌ Python 3 not found. Please install Python 3.8+"
+    exit 1
+fi
+
+# Check AWS credentials
+echo "Checking AWS credentials..."
+if ! aws sts get-caller-identity &> /dev/null; then
+    echo "❌ AWS credentials not configured. Run: aws configure"
+    exit 1
+fi
+
+echo "✅ Prerequisites check passed"
 
 # Install CDK dependencies
 echo "Installing CDK dependencies..."
 cd cdk
 pip install -r requirements.txt
 
-# Install Lambda dependencies
+# Install Lambda dependencies in their directories
 echo "Installing Lambda dependencies..."
 cd ../lambda/scraper
 pip install -r requirements.txt -t .
@@ -16,17 +42,48 @@ pip install -r requirements.txt -t .
 cd ../..
 
 # Bootstrap CDK (run once per account/region)
-echo "Bootstrapping CDK..."
+echo "Bootstrapping CDK (if needed)..."
+cd cdk
 cdk bootstrap
 
 # Deploy the stack
-echo "Deploying stack..."
-cd cdk
+echo "Deploying stack to AWS..."
 cdk deploy --require-approval never
 
+# Get outputs
+echo "Getting deployment outputs..."
+API_URL=$(aws cloudformation describe-stacks --stack-name CertificationHunterStack --query 'Stacks[0].Outputs[?OutputKey==`CertificationHunterAPIEndpoint`].OutputValue' --output text 2>/dev/null || echo "")
+BUCKET_NAME=$(aws cloudformation describe-stacks --stack-name CertificationHunterStack --query 'Stacks[0].Outputs[?OutputKey==`AssetsBucketName`].OutputValue' --output text 2>/dev/null || echo "")
+
+echo ""
+# Update frontend with API URL and upload to S3
+echo "Updating frontend with API Gateway URL..."
+cd ..
+python update-frontend.py
+
+echo ""
 echo "✅ Deployment complete!"
-echo "📝 Next steps:"
-echo "1. Update frontend/index.html with your API Gateway URL"
-echo "2. Upload frontend to S3 bucket for hosting"
-echo "3. Test the scraper Lambda function"
-echo "4. Configure EventBridge schedule"
+echo "📋 Deployment Summary:"
+echo "   Stack Name: CertificationHunterStack"
+
+# Get final outputs
+API_URL=$(aws cloudformation describe-stacks --stack-name CertificationHunterStack --query 'Stacks[0].Outputs[?OutputKey==`CertificationHunterAPIEndpoint`].OutputValue' --output text 2>/dev/null || echo "")
+BUCKET_NAME=$(aws cloudformation describe-stacks --stack-name CertificationHunterStack --query 'Stacks[0].Outputs[?OutputKey==`AssetsBucketName`].OutputValue' --output text 2>/dev/null || echo "")
+WEBSITE_URL=$(aws cloudformation describe-stacks --stack-name CertificationHunterStack --query 'Stacks[0].Outputs[?OutputKey==`WebsiteURL`].OutputValue' --output text 2>/dev/null || echo "")
+
+if [ ! -z "$API_URL" ]; then
+    echo "   API Gateway URL: $API_URL"
+fi
+if [ ! -z "$BUCKET_NAME" ]; then
+    echo "   S3 Bucket: $BUCKET_NAME"
+fi
+if [ ! -z "$WEBSITE_URL" ]; then
+    echo "   Website URL: $WEBSITE_URL"
+fi
+
+echo ""
+echo "🎉 Your Certification Coupon Hunter is now live!"
+echo "🌐 Open your website: $WEBSITE_URL"
+echo "📝 Test the deployment: python test-scraper.py"
+echo ""
+echo "🎯 Ready for your hackathon demo! 🚀"

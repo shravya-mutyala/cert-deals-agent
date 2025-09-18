@@ -1,23 +1,47 @@
-# Certification Coupon Hunter - Setup Guide
+# Certification Coupon Hunter - AWS Deployment Guide
 
 ## Prerequisites
 
 1. **AWS Account** with appropriate permissions
-2. **AWS CLI** configured with credentials
-3. **Python 3.11+** installed
+2. **AWS CLI** configured with credentials: `aws configure`
+3. **Python 3.8+** installed
 4. **Node.js** (for CDK)
 5. **AWS CDK** installed globally: `npm install -g aws-cdk`
 
-## Quick Start (Hackathon Mode)
+## Quick Deployment
 
-### 1. Deploy Infrastructure
+### 1. Setup Environment
 
 ```bash
-# Make deploy script executable
-chmod +x deploy.sh
+# Create virtual environment
+make setup
 
-# Run deployment
-./deploy.sh
+# Activate virtual environment
+source venv/bin/activate        # Linux/Mac
+# OR
+venv\Scripts\activate.bat       # Windows
+
+# Install dependencies
+make install
+```
+
+### 2. Deploy to AWS
+
+```bash
+# Deploy complete stack
+make deploy
+
+# Test deployment
+make test-aws
+
+# Upload frontend
+make upload-frontend
+```
+
+### 3. Complete Workflow (One Command)
+
+```bash
+make full-deploy
 ```
 
 ### 2. Configure Bedrock Access

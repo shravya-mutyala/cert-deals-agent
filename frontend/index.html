@@ -6,8 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Certification Coupon Hunter</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
@@ -16,123 +28,469 @@
         .header {
             text-align: center;
             margin-bottom: 40px;
+            color: white;
         }
 
-        .profile-section,
-        .offers-section {
-            margin-bottom: 40px;
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
 
-        .offer-card {
-            border: 1px solid #ddd;
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .providers-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .providers-title {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            color: #333;
+        }
+
+        .providers-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .provider-card {
+            background: #f8f9fa;
+            border-radius: 10px;
             padding: 20px;
-            margin: 10px 0;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .provider-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            border-color: #007cba;
+        }
+
+        .provider-logo-img {
+            width: 100px;
+            height: 70px;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border-radius: 8px;
+            background: white;
+            padding: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
-        .offer-card.high-match {
-            border-left: 5px solid #4CAF50;
+        .provider-logo-img img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
         }
 
-        .offer-card.medium-match {
-            border-left: 5px solid #FF9800;
+        .provider-name {
+            font-weight: 600;
+            color: #333;
         }
 
-        .match-score {
-            font-weight: bold;
-            color: #4CAF50;
+        .profile-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-title {
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            color: #333;
+            text-align: center;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
         }
 
         .form-group {
-            margin: 15px 0;
+            margin-bottom: 20px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
         }
 
         .form-group input,
         .form-group select {
             width: 100%;
-            padding: 8px;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
         }
 
-        button {
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #007cba;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            width: 100%;
+            transition: transform 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 124, 186, 0.3);
+        }
+
+        .ai-agent-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: white;
+        }
+
+        .ai-agent-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .ai-agent-description {
+            font-size: 1rem;
+            margin-bottom: 25px;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+
+        .ai-agent-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .ai-agent-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            background: #f8f9fa;
+        }
+
+        .ai-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .ai-feature {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .ai-feature-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+
+        .ai-feature-text {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .offers-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .offers-title {
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            color: #333;
+            text-align: center;
+        }
+
+        .offer-card {
+            border: 1px solid #e1e5e9;
+            padding: 25px;
+            margin: 15px 0;
+            border-radius: 12px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .offer-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .offer-card.high-match {
+            border-left: 5px solid #4CAF50;
+            background: linear-gradient(135deg, #f8fff8 0%, #f0f8f0 100%);
+        }
+
+        .offer-card.medium-match {
+            border-left: 5px solid #FF9800;
+            background: linear-gradient(135deg, #fffaf0 0%, #fff4e6 100%);
+        }
+
+        .offer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .offer-provider {
             background: #007cba;
             color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
         }
 
-        button:hover {
-            background: #005a87;
+        .match-score {
+            font-weight: bold;
+            color: #4CAF50;
+            font-size: 1.1rem;
+        }
+
+        .offer-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            color: #333;
         }
 
         .loading {
             text-align: center;
             color: #666;
+            font-style: italic;
+            padding: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .providers-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .ai-features {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .ai-agent-btn {
+                width: 100%;
+                padding: 12px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .providers-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .ai-features {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="header">
-        <h1>🎯 Certification Coupon Hunter</h1>
-        <p>Find the best certification discounts matched to your profile</p>
-    </div>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Certification Coupon Hunter</h1>
+            <p>Find the best certification discounts matched to your profile</p>
+        </div>
 
-    <div class="profile-section">
-        <h2>Your Profile</h2>
-        <form id="profileForm">
-            <div class="form-group">
-                <label for="userId">User ID:</label>
-                <input type="text" id="userId" placeholder="Enter your unique ID" required>
+        <div class="providers-section">
+            <h2 class="providers-title">Supported Certification Providers</h2>
+            <div class="providers-grid">
+                <div class="provider-card">
+                    <div class="provider-logo-img">
+                        <img src="logos/aws.png" alt="AWS" />
+                    </div>
+                    <div class="provider-name">Amazon Web Services</div>
+                </div>
+                <div class="provider-card">
+                    <div class="provider-logo-img">
+                        <img src="logos/azure.png" alt="Microsoft Azure" />
+                    </div>
+                    <div class="provider-name">Microsoft Azure</div>
+                </div>
+                <div class="provider-card">
+                    <div class="provider-logo-img">
+                        <img src="logos/gcp.png" alt="Google Cloud" />
+                    </div>
+                    <div class="provider-name">Google Cloud</div>
+                </div>
+                <div class="provider-card">
+                    <div class="provider-logo-img">
+                        <img src="logos/databricks.png" alt="Databricks" />
+                    </div>
+                    <div class="provider-name">Databricks</div>
+                </div>
+                <div class="provider-card">
+                    <div class="provider-logo-img">
+                        <img src="logos/salesforce.png" alt="Salesforce" />
+                    </div>
+                    <div class="provider-name">Salesforce</div>
+                </div>
             </div>
+        </div>
 
-            <div class="form-group">
-                <label for="location">Location:</label>
-                <input type="text" id="location" placeholder="e.g., United States, India, Europe">
+        <div class="profile-section">
+            <h2 class="profile-title">Your Profile</h2>
+            <form id="profileForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="userName">Your Name:</label>
+                        <input type="text" id="userName" placeholder="Enter your name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location">Location:</label>
+                        <input type="text" id="location" placeholder="e.g., United States, India, Europe">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="studentStatus">Student Status:</label>
+                        <select id="studentStatus">
+                            <option value="false">Not a student</option>
+                            <option value="true">Current student</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="targetCerts">Target Certifications:</label>
+                        <input type="text" id="targetCerts"
+                            placeholder="e.g., AWS Solutions Architect, Azure Administrator, GCP Professional, Databricks Data Engineer">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="preferredProviders">Preferred Providers:</label>
+                        <input type="text" id="preferredProviders"
+                            placeholder="e.g., AWS, Microsoft, Google Cloud, Salesforce, Databricks">
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">🔍 Find My Certification Deals</button>
+            </form>
+        </div>
+
+        <div class="ai-agent-section">
+            <h2 class="ai-agent-title">🤖 Need Personalized Help?</h2>
+            <p class="ai-agent-description">
+                Chat with our AI Certification Agent for personalized career advice, deal recommendations, and
+                certification planning
+            </p>
+            <button class="ai-agent-btn" onclick="openAIAgent()">
+                💬 Chat with AI Agent
+            </button>
+
+            <div class="ai-features">
+                <div class="ai-feature">
+                    <div class="ai-feature-icon">🎯</div>
+                    <div class="ai-feature-text">Personalized Career Planning</div>
+                </div>
+                <div class="ai-feature">
+                    <div class="ai-feature-icon">🔍</div>
+                    <div class="ai-feature-text">Smart Deal Discovery</div>
+                </div>
+                <div class="ai-feature">
+                    <div class="ai-feature-icon">📊</div>
+                    <div class="ai-feature-text">Certification Roadmaps</div>
+                </div>
+                <div class="ai-feature">
+                    <div class="ai-feature-icon">💰</div>
+                    <div class="ai-feature-text">Cost Optimization</div>
+                </div>
             </div>
+        </div>
 
-            <div class="form-group">
-                <label for="studentStatus">Student Status:</label>
-                <select id="studentStatus">
-                    <option value="false">Not a student</option>
-                    <option value="true">Current student</option>
-                </select>
+        <div class="offers-section">
+            <h2 class="offers-title">Matched Offers</h2>
+            <div id="offersContainer">
+                <p class="loading">Save your profile to see matched offers...</p>
             </div>
-
-            <div class="form-group">
-                <label for="targetCerts">Target Certifications (comma-separated):</label>
-                <input type="text" id="targetCerts" placeholder="e.g., AWS Solutions Architect, Salesforce Admin">
-            </div>
-
-            <div class="form-group">
-                <label for="preferredProviders">Preferred Providers (comma-separated):</label>
-                <input type="text" id="preferredProviders" placeholder="e.g., AWS, Salesforce, Microsoft">
-            </div>
-
-            <button type="submit">Save Profile & Find Offers</button>
-        </form>
-    </div>
-
-    <div class="offers-section">
-        <h2>Matched Offers</h2>
-        <div id="offersContainer">
-            <p class="loading">Save your profile to see matched offers...</p>
         </div>
     </div>
 
     <script>
         const API_BASE = 'YOUR_API_GATEWAY_URL'; // Replace with actual API Gateway URL
 
+        // Generate user ID from name
+        function generateUserId(name) {
+            return name.toLowerCase().replace(/[^a-z0-9]/g, '') + '-' + Date.now();
+        }
+
         document.getElementById('profileForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const userId = document.getElementById('userId').value;
+            const userName = document.getElementById('userName').value;
+            const userId = generateUserId(userName);
             const location = document.getElementById('location').value;
             const studentStatus = document.getElementById('studentStatus').value === 'true';
             const targetCerts = document.getElementById('targetCerts').value.split(',').map(s => s.trim()).filter(s => s);
@@ -147,6 +505,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         user_id: userId,
+                        name: userName,
                         location,
                         student_status: studentStatus,
                         target_certifications: targetCerts,
@@ -174,7 +533,7 @@
             const container = document.getElementById('offersContainer');
 
             if (!offers || offers.length === 0) {
-                container.innerHTML = '<p>No matching offers found. Check back later!</p>';
+                container.innerHTML = '<p class="loading">No matching offers found. Check back later!</p>';
                 return;
             }
 
@@ -184,12 +543,32 @@
 
                 return `
                     <div class="offer-card ${matchClass}">
-                        <h3>${offer.provider} - ${offer.cert_type || 'Certification Offer'}</h3>
-                        <p><strong>Discount:</strong> ${offer.discount || 'See details'}</p>
-                        <p><strong>Eligibility:</strong> ${offer.eligibility || 'Check requirements'}</p>
-                        <p><strong>Match Score:</strong> <span class="match-score">${Math.round(offer.match_score * 100)}%</span></p>
-                        <p><strong>Why it matches:</strong> ${reasons}</p>
-                        <p><strong>Source:</strong> <a href="${offer.source_url}" target="_blank">View Details</a></p>
+                        <div class="offer-header">
+                            <span class="offer-provider">${offer.provider}</span>
+                            <span class="match-score">${Math.round(offer.match_score * 100)}% Match</span>
+                        </div>
+                        
+                        <h3>${offer.cert_type || 'Certification Offer'}</h3>
+                        
+                        <div class="offer-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Discount</span>
+                                <span class="detail-value">${offer.discount || 'See details'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Eligibility</span>
+                                <span class="detail-value">${offer.eligibility || 'Check requirements'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Why it matches</span>
+                                <span class="detail-value">${reasons}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Source</span>
+                                <span class="detail-value"><a href="${offer.source_url}" target="_blank">View Details</a></span>
+                            </div>
+                        </div>
+                        
                         <small>Discovered: ${new Date(offer.discovered_at).toLocaleDateString()}</small>
                     </div>
                 `;
@@ -213,13 +592,33 @@
                         discovered_at: new Date().toISOString()
                     },
                     {
-                        provider: 'Salesforce',
-                        cert_type: 'Administrator',
-                        discount: 'Free retake voucher',
-                        eligibility: 'Trailhead users with 50+ badges',
+                        provider: 'Microsoft',
+                        cert_type: 'Azure Fundamentals (AZ-900)',
+                        discount: 'Free exam voucher',
+                        eligibility: 'Microsoft Learn users',
+                        match_score: 0.85,
+                        match_reasons: ['Preferred provider match', 'Entry-level certification'],
+                        source_url: 'https://docs.microsoft.com/en-us/learn/certifications/',
+                        discovered_at: new Date().toISOString()
+                    },
+                    {
+                        provider: 'Google Cloud',
+                        cert_type: 'Associate Cloud Engineer',
+                        discount: '$50 exam credit',
+                        eligibility: 'Google Cloud training participants',
+                        match_score: 0.8,
+                        match_reasons: ['Cloud certification match'],
+                        source_url: 'https://cloud.google.com/training/certification',
+                        discovered_at: new Date().toISOString()
+                    },
+                    {
+                        provider: 'Databricks',
+                        cert_type: 'Data Engineer Associate',
+                        discount: '30% off certification',
+                        eligibility: 'Databricks Academy participants',
                         match_score: 0.75,
-                        match_reasons: ['Preferred provider match'],
-                        source_url: 'https://trailhead.salesforce.com/',
+                        match_reasons: ['Data engineering focus'],
+                        source_url: 'https://www.databricks.com/learn/certification',
                         discovered_at: new Date().toISOString()
                     }
                 ];
@@ -228,6 +627,12 @@
                     '<p><em>Demo Mode - Sample offers shown below:</em></p>';
                 displayOffers(sampleOffers);
             }, 1000);
+        }
+
+        // Function to open AI Agent chat
+        function openAIAgent() {
+            // Open the AI agent chat in a new window/tab
+            window.open('agent-chat.html', '_blank', 'width=1000,height=700,scrollbars=yes,resizable=yes');
         }
     </script>
 </body>

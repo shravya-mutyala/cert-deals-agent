@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Certification Agent - Chat Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 15px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: #007cba;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.agent {
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: #007cba;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.agent .message-content {
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+
+        .user-avatar {
+            background: #28a745;
+        }
+
+        .agent-avatar {
+            background: #007cba;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e1e5e9;
+        }
+
+        .chat-input-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: #007cba;
+        }
+
+        .send-button {
+            background: #007cba;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .send-button:hover {
+            background: #005a87;
+        }
+
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 10px 20px;
+            font-style: italic;
+            color: #666;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .quick-action {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 20px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .quick-action:hover {
+            background: #007cba;
+            color: white;
+        }
+
+        .deal-card {
+            background: #f0f8ff;
+            border: 1px solid #007cba;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .deal-header {
+            font-weight: bold;
+            color: #007cba;
+            margin-bottom: 5px;
+        }
+
+        .career-path {
+            background: #f8fff8;
+            border: 1px solid #28a745;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .phase {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Certification Agent</h1>
+            <p>Your intelligent assistant for certification deals and career planning</p>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-header">
+                <h2>Chat with Your Certification Expert</h2>
+                <p>Ask about deals, career paths, or certification recommendations</p>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message agent">
+                    <div class="message-avatar agent-avatar">AI</div>
+                    <div class="message-content">
+                        <p>Hello! I'm your AI Certification Agent. I can help you:</p>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Find the best certification deals across all major providers</li>
+                            <li>Plan your certification career path</li>
+                            <li>Analyze eligibility requirements</li>
+                            <li>Recommend optimal learning sequences</li>
+                        </ul>
+                        <p>What would you like to explore today?</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typingIndicator">
+                Agent is thinking...
+            </div>
+
+            <div class="chat-input-container">
+                <div class="quick-actions">
+                    <div class="quick-action" onclick="sendQuickMessage('Find AWS certification deals')">Find AWS Deals
+                    </div>
+                    <div class="quick-action"
+                        onclick="sendQuickMessage('Plan my career path from developer to cloud architect')">Career
+                        Planning</div>
+                    <div class="quick-action"
+                        onclick="sendQuickMessage('What certifications should I get for DevOps?')">DevOps Certs</div>
+                    <div class="quick-action" onclick="sendQuickMessage('Compare Azure vs AWS certifications')">Compare
+                        Providers</div>
+                </div>
+
+                <form class="chat-input-form" id="chatForm">
+                    <input type="text" class="chat-input" id="chatInput"
+                        placeholder="Ask about certification deals, career paths, or recommendations..." required />
+                    <button type="submit" class="send-button" id="sendButton">
+                        ➤
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BEDROCK_AGENT_API = 'YOUR_BEDROCK_AGENT_API_URL'; // Replace with actual agent API
+
+        const chatMessages = document.getElementById('chatMessages');
+        const chatForm = document.getElementById('chatForm');
+        const chatInput = document.getElementById('chatInput');
+        const sendButton = document.getElementById('sendButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        let conversationHistory = [];
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = chatInput.value.trim();
+            if (message) {
+                await sendMessage(message);
+                chatInput.value = '';
+            }
+        });
+
+        function sendQuickMessage(message) {
+            sendMessage(message);
+        }
+
+        async function sendMessage(message) {
+            // Add user message to chat
+            addMessage('user', message);
+
+            // Show typing indicator
+            showTyping(true);
+
+            try {
+                // Call Bedrock Agent API
+                const response = await callBedrockAgent(message);
+
+                // Hide typing indicator
+                showTyping(false);
+
+                // Add agent response
+                addMessage('agent', response);
+
+            } catch (error) {
+                showTyping(false);
+                addMessage('agent', 'I apologize, but I encountered an error. Please try again or contact support.');
+                console.error('Agent API error:', error);
+            }
+        }
+
+        async function callBedrockAgent(message) {
+            // For demo purposes, return mock responses
+            // In production, this would call the actual Bedrock Agent API
+
+            if (BEDROCK_AGENT_API === 'YOUR_BEDROCK_AGENT_API_URL') {
+                return getMockResponse(message);
+            }
+
+            // Actual API call would look like this:
+            const response = await fetch(BEDROCK_AGENT_API, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    conversationHistory: conversationHistory
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Agent API request failed');
+            }
+
+            const data = await response.json();
+            return data.response;
+        }
+
+        function getMockResponse(message) {
+            const lowerMessage = message.toLowerCase();
+
+            if (lowerMessage.includes('aws') && lowerMessage.includes('deal')) {
+                return formatDealsResponse([
+                    {
+                        provider: 'AWS',
+                        certification: 'Solutions Architect Associate',
+                        discount: '50% off for students',
+                        eligibility: 'Valid student ID required',
+                        expires: '2024-12-31'
+                    },
+                    {
+                        provider: 'AWS',
+                        certification: 'Cloud Practitioner',
+                        discount: 'Free retake voucher',
+                        eligibility: 'First-time test takers',
+                        expires: '2024-11-30'
+                    }
+                ]);
+            }
+
+            if (lowerMessage.includes('career') || lowerMessage.includes('path')) {
+                return formatCareerPathResponse({
+                    summary: 'Recommended path from Developer to Cloud Architect',
+                    timeline: '12-18 months',
+                    phases: [
+                        {
+                            name: 'Foundation (3-4 months)',
+                            certifications: ['AWS Cloud Practitioner', 'Azure Fundamentals'],
+                            focus: 'Cloud basics and core services'
+                        },
+                        {
+                            name: 'Specialization (6-8 months)',
+                            certifications: ['AWS Solutions Architect Associate', 'Azure Administrator'],
+                            focus: 'Architecture and best practices'
+                        },
+                        {
+                            name: 'Mastery (6-12 months)',
+                            certifications: ['AWS Solutions Architect Professional'],
+                            focus: 'Advanced architecture and leadership'
+                        }
+                    ]
+                });
+            }
+
+            if (lowerMessage.includes('devops')) {
+                return `For DevOps roles, I recommend this certification sequence:
+                
+                **Foundation:**
+                - AWS Cloud Practitioner or Azure Fundamentals
+                
+                **Core DevOps:**
+                - AWS Certified DevOps Engineer or Azure DevOps Engineer Expert
+                - Docker Certified Associate
+                - Kubernetes certifications (CKA/CKAD)
+                
+                **Advanced:**
+                - Terraform Associate
+                - Jenkins certifications
+                - Security-focused certifications
+                
+                This path typically takes 8-12 months and costs $800-1200, but I can help you find deals to reduce costs by 30-50%!`;
+            }
+
+            if (lowerMessage.includes('compare') && (lowerMessage.includes('azure') || lowerMessage.includes('aws'))) {
+                return `**AWS vs Azure Certifications Comparison:**
+                
+                **AWS Advantages:**
+                - Larger market share (more job opportunities)
+                - More mature certification program
+                - Better community resources
+                
+                **Azure Advantages:**
+                - Strong enterprise integration
+                - Growing rapidly in market share
+                - Often preferred by Microsoft-centric organizations
+                
+                **My Recommendation:** Start with AWS if you're new to cloud, as it has more resources and job opportunities. Add Azure certifications later for maximum marketability.
+                
+                Would you like me to find current deals for either platform?`;
+            }
+
+            return `I understand you're asking about "${message}". Let me help you with that!
+            
+            I can assist with:
+            - Finding certification deals across AWS, Azure, Google Cloud, Databricks, and Salesforce
+            - Planning your certification career path
+            - Analyzing eligibility requirements
+            - Comparing different certification options
+            
+            Could you be more specific about what you'd like to know?`;
+        }
+
+        function formatDealsResponse(deals) {
+            let response = `I found ${deals.length} great certification deals for you:\n\n`;
+
+            deals.forEach((deal, index) => {
+                response += `**${deal.provider} - ${deal.certification}**\n`;
+                response += `💰 Discount: ${deal.discount}\n`;
+                response += `✅ Eligibility: ${deal.eligibility}\n`;
+                response += `⏰ Expires: ${deal.expires}\n\n`;
+            });
+
+            response += `Would you like me to help you check eligibility for any of these deals or find more options?`;
+
+            return response;
+        }
+
+        function formatCareerPathResponse(path) {
+            let response = `**${path.summary}**\n\n`;
+            response += `⏱️ **Timeline:** ${path.timeline}\n\n`;
+            response += `**Learning Path:**\n\n`;
+
+            path.phases.forEach((phase, index) => {
+                response += `**${phase.name}**\n`;
+                response += `Focus: ${phase.focus}\n`;
+                response += `Certifications: ${phase.certifications.join(', ')}\n\n`;
+            });
+
+            response += `Would you like me to find current deals for any of these certifications or adjust the plan based on your specific background?`;
+
+            return response;
+        }
+
+        function addMessage(sender, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = `message-avatar ${sender}-avatar`;
+            avatar.textContent = sender === 'user' ? 'You' : 'AI';
+
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+
+            // Format message content (convert markdown-like formatting)
+            const formattedContent = formatMessageContent(content);
+            messageContent.innerHTML = formattedContent;
+
+            if (sender === 'user') {
+                messageDiv.appendChild(messageContent);
+                messageDiv.appendChild(avatar);
+            } else {
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(messageContent);
+            }
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Add to conversation history
+            conversationHistory.push({ sender, content });
+        }
+
+        function formatMessageContent(content) {
+            return content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>')
+                .replace(/💰|✅|⏰|⏱️/g, '<span style="font-size: 1.1em;">$&</span>');
+        }
+
+        function showTyping(show) {
+            typingIndicator.style.display = show ? 'block' : 'none';
+            sendButton.disabled = show;
+
+            if (show) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        // Auto-focus input
+        chatInput.focus();
+    </script>
+</body>
+
+</html>
