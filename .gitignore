@@ -54,13 +54,75 @@ local_server.py
 temp/
 .pytest_cache/
 
-# Lambda packages
+# Lambda packages (installed by deployment)
 lambda/*/boto3/
 lambda/*/botocore/
 lambda/*/requests/
 lambda/*/bs4/
 lambda/*/lxml/
+lambda/*/urllib3/
+lambda/*/certifi/
+lambda/*/charset_normalizer/
+lambda/*/idna/
+lambda/*/soupsieve/
+lambda/*/six/
+lambda/*/python_dateutil/
+lambda/*/jmespath/
+lambda/*/s3transfer/
+lambda/*/docutils/
+lambda/*/rsa/
+lambda/*/pyasn1/
+lambda/*/colorama/
+lambda/*/PyYAML/
+lambda/*/awscrt/
+lambda/*/awsiotsdk/
+
+# All installed packages in lambda directories
+lambda/scraper/boto3*
+lambda/scraper/botocore*
+lambda/scraper/requests*
+lambda/scraper/bs4*
+lambda/scraper/lxml*
+lambda/scraper/urllib3*
+lambda/scraper/certifi*
+lambda/scraper/charset_normalizer*
+lambda/scraper/idna*
+lambda/scraper/soupsieve*
+lambda/scraper/six*
+lambda/scraper/python_dateutil*
+lambda/scraper/jmespath*
+lambda/scraper/s3transfer*
+lambda/scraper/docutils*
+lambda/scraper/rsa*
+lambda/scraper/pyasn1*
+lambda/scraper/colorama*
+lambda/scraper/PyYAML*
+lambda/scraper/*.dist-info/
+lambda/scraper/bin/
+lambda/scraper/dateutil/
+
+lambda/matcher/boto3*
+lambda/matcher/botocore*
+lambda/matcher/*.dist-info/
+lambda/matcher/bin/
+lambda/matcher/dateutil/
+lambda/matcher/six.py
+
+lambda/agent_tools/boto3*
+lambda/agent_tools/botocore*
+lambda/agent_tools/*.dist-info/
+
+# Python cache in lambda directories
+lambda/**/__pycache__/
+lambda/**/*.pyc
 
 # Environment variables
 .env
 .env.local
+.env.production
+.env.staging
+
+# AWS
+.aws/
+*.pem
+aws-exports.js

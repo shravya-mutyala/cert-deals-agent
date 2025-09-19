@@ -2,6 +2,24 @@
 
 echo "🚀 Deploying Certification Coupon Hunter to AWS..."
 
+# Load environment variables from .env file
+if [ -f .env ]; then
+    echo "Loading environment variables from .env..."
+    export $(cat .env | grep -v '^#' | xargs)
+else
+    echo "Warning: .env file not found. Using system environment variables."
+fi
+
+# Run pre-deployment checks
+echo "Running pre-deployment checks..."
+python pre-deploy-check.py
+if [ $? -ne 0 ]; then
+    echo "❌ Pre-deployment checks failed. Please fix the issues and try again."
+    exit 1
+fi
+
+echo "✅ Pre-deployment checks passed!"
+
 # Check prerequisites
 echo "Checking prerequisites..."
 if ! command -v aws &> /dev/null; then
