@@ -1,1 +1,3 @@
-boto3==1.34.0
+# Minimal requirements for matcher function
+# boto3 is already available in Lambda runtime
+requests>=2.31.0

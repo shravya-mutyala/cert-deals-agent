@@ -282,7 +282,7 @@
     </div>
 
     <script>
-        const BEDROCK_AGENT_API = 'YOUR_BEDROCK_AGENT_API_URL'; // Replace with actual agent API
+        const BEDROCK_AGENT_API = 'https://ehvx4tl0lc.execute-api.us-east-1.amazonaws.com/prod/strands';
 
         const chatMessages = document.getElementById('chatMessages');
         const chatForm = document.getElementById('chatForm');
@@ -330,31 +330,380 @@
         }
 
         async function callBedrockAgent(message) {
-            // For demo purposes, return mock responses
-            // In production, this would call the actual Bedrock Agent API
+            // Call the actual Lambda function with proper format
+            console.log('🤖 Calling agent with message:', message);
 
-            if (BEDROCK_AGENT_API === 'YOUR_BEDROCK_AGENT_API_URL') {
-                return getMockResponse(message);
+            try {
+                // Smart intent detection based on user message
+                const intent = detectUserIntent(message);
+                console.log('🧠 Detected intent:', intent);
+
+                let action, payload;
+
+                switch (intent.type) {
+                    case 'greeting':
+                        return getGreetingResponse();
+
+                    case 'help':
+                        return getHelpResponse();
+
+                    case 'career_advice':
+                        return getCareerAdviceResponse(message);
+
+                    case 'general_question':
+                        return getGeneralResponse(message);
+
+                    case 'discover_deals':
+                        action = 'discover_deals';
+                        payload = {
+                            action: 'discover_deals',
+                            providers: intent.providers || ['AWS', 'Azure', 'Google Cloud']
+                        };
+                        break;
+
+                    case 'save_profile':
+                        action = 'save_profile';
+                        payload = {
+                            action: 'save_profile',
+                            user_id: 'chat_user_' + Date.now(),
+                            current_role: intent.currentRole || 'Developer',
+                            target_role: intent.targetRole || 'Cloud Architect',
+                            preferred_cloud: intent.preferredCloud || 'AWS'
+                        };
+                        break;
+
+                    case 'get_recommendations':
+                        action = 'get_recommendations';
+                        payload = {
+                            action: 'get_recommendations',
+                            user_id: 'chat_user'
+                        };
+                        break;
+
+                    case 'analyze_trends':
+                        action = 'analyze_trends';
+                        payload = {
+                            action: 'analyze_trends'
+                        };
+                        break;
+
+                    default:
+                        // Default to a conversational response instead of always discovering deals
+                        return getConversationalResponse(message);
+                }
+
+                // Only make API calls for specific actions that need backend data
+                if (!action) {
+                    return getConversationalResponse(message);
+                }
+
+                console.log('📤 Sending payload:', payload);
+
+                const response = await fetch(BEDROCK_AGENT_API, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    console.error('❌ API request failed:', response.status, response.statusText);
+                    throw new Error(`Agent API request failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('📥 Received response:', data);
+
+                if (data.success && data.result) {
+                    return formatAgentResponse(data.result, action, message);
+                } else {
+                    throw new Error(data.message || 'Agent returned an error');
+                }
+
+            } catch (error) {
+                console.error('❌ Agent call error:', error);
+                return `I apologize, but I encountered an error: ${error.message}. Let me try to help you with some general information about certification deals instead.`;
+            }
+        }
+
+        function detectUserIntent(message) {
+            const lowerMessage = message.toLowerCase();
+
+            // Greeting patterns
+            if (/^(hi|hello|hey|good morning|good afternoon|good evening)/.test(lowerMessage)) {
+                return { type: 'greeting' };
             }
 
-            // Actual API call would look like this:
-            const response = await fetch(BEDROCK_AGENT_API, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    message: message,
-                    conversationHistory: conversationHistory
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Agent API request failed');
+            // Help patterns
+            if (lowerMessage.includes('help') || lowerMessage.includes('what can you do') || lowerMessage.includes('how to')) {
+                return { type: 'help' };
             }
 
-            const data = await response.json();
-            return data.response;
+            // Career advice patterns
+            if (lowerMessage.includes('career') || lowerMessage.includes('path') || lowerMessage.includes('roadmap') ||
+                lowerMessage.includes('should i') || lowerMessage.includes('which certification') ||
+                lowerMessage.includes('best certification') || lowerMessage.includes('start with')) {
+                return { type: 'career_advice' };
+            }
+
+            // Deal discovery patterns
+            if (lowerMessage.includes('find') && (lowerMessage.includes('deal') || lowerMessage.includes('discount') || lowerMessage.includes('offer'))) {
+                const providers = [];
+                if (lowerMessage.includes('aws')) providers.push('AWS');
+                if (lowerMessage.includes('azure')) providers.push('Azure');
+                if (lowerMessage.includes('google') || lowerMessage.includes('gcp')) providers.push('Google Cloud');
+
+                return { type: 'discover_deals', providers: providers.length > 0 ? providers : null };
+            }
+
+            // Profile saving patterns
+            if (lowerMessage.includes('save') && (lowerMessage.includes('profile') || lowerMessage.includes('preference'))) {
+                return { type: 'save_profile' };
+            }
+
+            // Recommendations patterns
+            if (lowerMessage.includes('recommend') || lowerMessage.includes('suggest') || lowerMessage.includes('advice') ||
+                lowerMessage.includes('what should') || lowerMessage.includes('personalized')) {
+                return { type: 'get_recommendations' };
+            }
+
+            // Trends/analysis patterns
+            if (lowerMessage.includes('trend') || lowerMessage.includes('analysis') || lowerMessage.includes('market') ||
+                lowerMessage.includes('statistics') || lowerMessage.includes('data')) {
+                return { type: 'analyze_trends' };
+            }
+
+            // General questions about certifications
+            if (lowerMessage.includes('certification') || lowerMessage.includes('exam') || lowerMessage.includes('aws') ||
+                lowerMessage.includes('azure') || lowerMessage.includes('google cloud') || lowerMessage.includes('cloud')) {
+                return { type: 'general_question' };
+            }
+
+            // Default to conversational
+            return { type: 'conversational' };
+        }
+
+        function getGreetingResponse() {
+            return `Hello! 👋 I'm your certification deals assistant. I can help you with:
+
+🔍 **Finding Deals**: "Find AWS certification deals"
+🎯 **Career Advice**: "What certification should I start with?"
+📊 **Recommendations**: "Give me personalized suggestions"
+📈 **Market Trends**: "Show me certification market trends"
+💾 **Save Profile**: "Save my preferences"
+
+What would you like to know about certification deals and career paths?`;
+        }
+
+        function getHelpResponse() {
+            return `I'm here to help you with certification deals and career planning! Here's what I can do:
+
+**🔍 Deal Discovery**
+- "Find AWS deals"
+- "Show me Azure discounts"
+- "What Google Cloud offers are available?"
+
+**🎯 Career Guidance**
+- "What certification should I start with?"
+- "Best path from developer to cloud architect"
+- "Which AWS certification is right for me?"
+
+**📊 Personalized Help**
+- "Give me recommendations"
+- "Suggest certifications for my profile"
+- "What deals match my goals?"
+
+**📈 Market Insights**
+- "Show me market trends"
+- "Which provider has the best deals?"
+- "Analyze certification data"
+
+Just ask me anything about certifications and I'll help you find the best deals and career path!`;
+        }
+
+        function getCareerAdviceResponse(message) {
+            const lowerMessage = message.toLowerCase();
+
+            if (lowerMessage.includes('start') || lowerMessage.includes('beginner')) {
+                return `🎯 **Great question about starting your certification journey!**
+
+For beginners, I recommend this path:
+
+**1. Start with Fundamentals:**
+- AWS Cloud Practitioner (easiest entry point)
+- Azure Fundamentals (AZ-900)
+- Google Cloud Digital Leader
+
+**2. Then move to Associate level:**
+- AWS Solutions Architect Associate
+- Azure Administrator Associate
+- Google Cloud Associate Engineer
+
+**3. Consider your background:**
+- **Developer?** Start with AWS Developer Associate
+- **System Admin?** Try Azure Administrator
+- **Data focused?** Look at Google Cloud Data Engineer
+
+Would you like me to find current deals for any of these certifications? Just say "Find [provider] deals" and I'll search for you!`;
+            }
+
+            if (lowerMessage.includes('aws')) {
+                return `🚀 **AWS Certification Path Advice:**
+
+**For beginners:**
+1. AWS Cloud Practitioner (foundational)
+2. AWS Solutions Architect Associate (most popular)
+
+**For developers:**
+1. AWS Developer Associate
+2. AWS DevOps Engineer Professional
+
+**For system admins:**
+1. AWS SysOps Administrator Associate
+2. AWS Solutions Architect Professional
+
+**Current market insight:** AWS certifications have the highest demand and often the best deals for students.
+
+Want me to find current AWS deals for you? Just ask "Find AWS deals"!`;
+            }
+
+            return `🎯 **Career Path Guidance:**
+
+The best certification depends on your goals:
+
+**🏗️ Architecture Focus:** AWS/Azure Solutions Architect
+**💻 Development Focus:** AWS Developer, Azure Developer
+**☁️ Cloud Operations:** AWS SysOps, Azure Administrator  
+**📊 Data & Analytics:** Google Cloud Data Engineer, AWS Data Analytics
+
+**My recommendation:** Start with cloud fundamentals, then specialize based on your career goals.
+
+Would you like me to find deals for a specific provider or get personalized recommendations based on your profile?`;
+        }
+
+        function getGeneralResponse(message) {
+            const lowerMessage = message.toLowerCase();
+
+            if (lowerMessage.includes('aws')) {
+                return `☁️ **About AWS Certifications:**
+
+AWS offers certifications at 4 levels:
+- **Foundational:** Cloud Practitioner
+- **Associate:** Solutions Architect, Developer, SysOps
+- **Professional:** Solutions Architect, DevOps Engineer  
+- **Specialty:** Security, Machine Learning, etc.
+
+**Popular deals:** AWS often offers student discounts and free retakes.
+
+Want me to find current AWS deals? Just say "Find AWS deals"!`;
+            }
+
+            if (lowerMessage.includes('azure')) {
+                return `🔷 **About Microsoft Azure Certifications:**
+
+Azure certifications are role-based:
+- **Fundamentals:** AZ-900 (often free!)
+- **Associate:** Administrator, Developer, Security Engineer
+- **Expert:** Solutions Architect, DevOps Engineer
+
+**Popular deals:** Microsoft frequently offers free exam vouchers through Microsoft Learn.
+
+Want me to find current Azure deals? Just say "Find Azure deals"!`;
+            }
+
+            return `💡 **Certification Information:**
+
+I can help you with certifications from:
+- **AWS** (most popular, great for cloud architecture)
+- **Microsoft Azure** (enterprise-focused, often free fundamentals)
+- **Google Cloud** (data and ML focused, good training credits)
+
+What specific information are you looking for? I can find deals, give career advice, or provide recommendations!`;
+        }
+
+        function getConversationalResponse(message) {
+            return `I understand you're asking about "${message}". 
+
+I'm specialized in helping with certification deals and career paths. Here are some things I can help you with:
+
+🔍 **"Find AWS deals"** - Discover current certification discounts
+🎯 **"What certification should I start with?"** - Get career advice  
+📊 **"Give me recommendations"** - Personalized suggestions
+📈 **"Show me trends"** - Market analysis and insights
+
+What would you like to know about certification deals or career planning?`;
+        }
+
+        function formatAgentResponse(result, action, originalMessage) {
+            console.log('🎨 Formatting response for action:', action);
+
+            switch (action) {
+                case 'discover_deals':
+                    if (result.deals && result.deals.length > 0) {
+                        let response = `🎉 Great! I found ${result.deals_discovered} certification deals for you!\n\n`;
+
+                        result.deals.forEach((deal, index) => {
+                            response += `**${index + 1}. ${deal.provider} - ${deal.certification_name}**\n`;
+                            response += `💰 Discount: ${deal.discount_amount}\n`;
+                            response += `📅 Expires: ${deal.expiry_date}\n`;
+                            response += `👥 Eligibility: ${deal.eligibility}\n`;
+                            response += `🔗 Source: ${deal.source_url}\n\n`;
+                        });
+
+                        // Only show storage message if deals were actually stored
+                        if (result.deals_stored > 0) {
+                            response += `✅ I've stored ${result.deals_stored} deals in your database for future reference!`;
+                        }
+                        return response;
+                    } else {
+                        return "I searched for certification deals but didn't find any current offers. Let me keep looking for you!";
+                    }
+
+                case 'save_profile':
+                    if (result.status === 'success') {
+                        return `✅ Perfect! I've saved your profile successfully. Your preferences are now stored and I can provide personalized recommendations based on your goals.`;
+                    } else {
+                        return `⚠️ I had trouble saving your profile: ${result.message}. Please try again.`;
+                    }
+
+                case 'get_recommendations':
+                    if (result.recommendations && result.recommendations.length > 0) {
+                        let response = `🎯 Based on your profile, I found ${result.recommendations_count} personalized recommendations:\n\n`;
+
+                        result.recommendations.forEach((rec, index) => {
+                            const deal = rec.deal;
+                            response += `**${index + 1}. ${deal.provider} - ${deal.certification_name}**\n`;
+                            response += `💡 Why this matches: ${rec.reason}\n`;
+                            response += `📊 Relevance: ${Math.round(rec.relevance_score * 100)}%\n`;
+                            response += `💰 Discount: ${deal.discount_amount}\n\n`;
+                        });
+
+                        return response;
+                    } else {
+                        return "I don't have any personalized recommendations yet. Let me discover some deals first, or you can save your profile to get better recommendations!";
+                    }
+
+                case 'analyze_trends':
+                    if (result.total_deals > 0) {
+                        let response = `📊 Here's my analysis of the certification market:\n\n`;
+                        response += `📈 Total deals analyzed: ${result.total_deals}\n`;
+                        response += `🏆 Best provider: ${result.best_provider}\n`;
+                        response += `💰 Total market savings: $${result.total_market_savings}\n`;
+                        response += `📋 Deals by provider:\n`;
+
+                        Object.entries(result.deals_by_provider).forEach(([provider, count]) => {
+                            response += `   • ${provider}: ${count} deals\n`;
+                        });
+
+                        return response;
+                    } else {
+                        return "I don't have enough data to analyze trends yet. Let me discover some deals first!";
+                    }
+
+                default:
+                    return "I processed your request successfully! How else can I help you with certification deals?";
+            }
         }
 
         function getMockResponse(message) {

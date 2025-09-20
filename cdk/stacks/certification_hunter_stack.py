@@ -50,6 +50,7 @@ class CertificationHunterStack(Stack):
         # Lambda Functions
         self.scraper_function = self._create_scraper_lambda()
         self.matcher_function = self._create_matcher_lambda()
+        self.strands_agent_function = self._create_strands_agent_lambda()
         
         # API Gateway
         self.api = self._create_api()
@@ -62,7 +63,7 @@ class CertificationHunterStack(Stack):
             self, "ScraperFunction",
             runtime=_lambda.Runtime.PYTHON_3_11,
             handler="scraper.handler",
-            code=_lambda.Code.from_asset("lambda/scraper"),
+            code=_lambda.Code.from_asset("../lambda/scraper"),
             timeout=Duration.minutes(5),
             environment={
                 "OFFERS_TABLE": self.offers_table.table_name,
@@ -86,7 +87,7 @@ class CertificationHunterStack(Stack):
             self, "MatcherFunction",
             runtime=_lambda.Runtime.PYTHON_3_11,
             handler="matcher.handler", 
-            code=_lambda.Code.from_asset("lambda/matcher"),
+            code=_lambda.Code.from_asset("../lambda/matcher"),
             timeout=Duration.minutes(2),
             environment={
                 "OFFERS_TABLE": self.offers_table.table_name,
@@ -97,6 +98,33 @@ class CertificationHunterStack(Stack):
         self.offers_table.grant_read_data(function)
         self.users_table.grant_read_write_data(function)
         
+        function.add_to_role_policy(iam.PolicyStatement(
+            actions=["bedrock:InvokeModel"],
+            resources=["*"]
+        ))
+        
+        return function
+
+    def _create_strands_agent_lambda(self):
+        """Create Strands Agent Lambda function"""
+        function = _lambda.Function(
+            self, "StrandsAgentFunction",
+            runtime=_lambda.Runtime.PYTHON_3_11,
+            handler="lambda_function.lambda_handler",
+            code=_lambda.Code.from_asset("../lambda/strands_agent_lambda"),
+            timeout=Duration.minutes(5),
+            memory_size=512,
+            environment={
+                "OFFERS_TABLE": self.offers_table.table_name,
+                "USERS_TABLE": self.users_table.table_name
+            }
+        )
+        
+        # Grant DynamoDB permissions
+        self.offers_table.grant_read_write_data(function)
+        self.users_table.grant_read_write_data(function)
+        
+        # Bedrock permissions (if needed for future enhancements)
         function.add_to_role_policy(iam.PolicyStatement(
             actions=["bedrock:InvokeModel"],
             resources=["*"]
@@ -117,6 +145,28 @@ class CertificationHunterStack(Stack):
         # Users endpoint  
         users = api.root.add_resource("users")
         users.add_method("POST", apigateway.LambdaIntegration(self.matcher_function))
+        
+        # Strands Agent endpoint
+        strands = api.root.add_resource("strands")
+        strands.add_method("POST", apigateway.LambdaIntegration(self.strands_agent_function))
+        strands.add_method("OPTIONS", apigateway.MockIntegration(
+            integration_responses=[{
+                'statusCode': '200',
+                'responseParameters': {
+                    'method.response.header.Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                    'method.response.header.Access-Control-Allow-Origin': "'*'",
+                    'method.response.header.Access-Control-Allow-Methods': "'GET,POST,OPTIONS'"
+                }
+            }],
+            request_templates={'application/json': '{"statusCode": 200}'}
+        ), method_responses=[{
+            'statusCode': '200',
+            'responseParameters': {
+                'method.response.header.Access-Control-Allow-Headers': True,
+                'method.response.header.Access-Control-Allow-Origin': True,
+                'method.response.header.Access-Control-Allow-Methods': True
+            }
+        }])
         
         return api
 
@@ -162,6 +212,13 @@ class CertificationHunterStack(Stack):
             value=self.assets_bucket.bucket_website_url,
             description="Website URL"
         )
+        
+        # Strands Agent endpoint
+        CfnOutput(
+            self, "StrandsAgentEndpoint",
+            value=f"{self.api.url}strands",
+            description="Strands Agent API endpoint"
+        )
 
     def _deploy_frontend(self):
         """Deploy frontend to S3"""
@@ -169,6 +226,6 @@ class CertificationHunterStack(Stack):
         # Deploy all frontend assets to S3
         s3deploy.BucketDeployment(
             self, "DeployFrontend",
-            sources=[s3deploy.Source.asset("frontend")],
+            sources=[s3deploy.Source.asset("../frontend")],
             destination_bucket=self.assets_bucket
         )

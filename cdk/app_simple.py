@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Main CDK app for Certification Hunter
+Simple CDK app for Certification Hunter
+Only deploys the main stack without additional complexity
 """
 
 import aws_cdk as cdk

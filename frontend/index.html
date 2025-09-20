@@ -12,6 +12,10 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -479,11 +483,32 @@
     </div>
 
     <script>
-        const API_BASE = 'YOUR_API_GATEWAY_URL'; // Replace with actual API Gateway URL
+        const API_BASE = 'https://ehvx4tl0lc.execute-api.us-east-1.amazonaws.com/prod/strands';
 
         // Generate user ID from name
         function generateUserId(name) {
             return name.toLowerCase().replace(/[^a-z0-9]/g, '') + '-' + Date.now();
+        }
+
+        // Auto-scroll to offers section
+        function scrollToOffers() {
+            const offersSection = document.querySelector('.offers-section');
+            if (offersSection) {
+                // Add a subtle highlight effect
+                offersSection.style.transition = 'box-shadow 0.3s ease';
+                offersSection.style.boxShadow = '0 0 20px rgba(0, 124, 186, 0.3)';
+
+                // Scroll to the section
+                offersSection.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+
+                // Remove highlight after 2 seconds
+                setTimeout(() => {
+                    offersSection.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.1)';
+                }, 2000);
+            }
         }
 
         document.getElementById('profileForm').addEventListener('submit', async (e) => {
@@ -496,89 +521,199 @@
             const targetCerts = document.getElementById('targetCerts').value.split(',').map(s => s.trim()).filter(s => s);
             const preferredProviders = document.getElementById('preferredProviders').value.split(',').map(s => s.trim()).filter(s => s);
 
+            // Show loading state on button
+            const submitBtn = document.querySelector('.submit-btn');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = '🔄 Finding Deals...';
+            submitBtn.disabled = true;
+
+            // Auto-scroll to offers section with a small delay for better UX
+            setTimeout(() => {
+                scrollToOffers();
+            }, 300);
+
             // Save profile
             try {
                 document.getElementById('offersContainer').innerHTML = '<p class="loading">Saving profile...</p>';
 
-                const profileResponse = await fetch(`${API_BASE}/users`, {
+                // Save user profile using Strands agent
+                const profileResponse = await fetch(API_BASE, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        action: 'save_profile',
                         user_id: userId,
-                        name: userName,
-                        location,
-                        student_status: studentStatus,
-                        target_certifications: targetCerts,
-                        preferred_providers: preferredProviders
+                        current_role: 'Developer', // You could add this to the form
+                        target_role: 'Cloud Architect', // You could add this to the form
+                        preferred_cloud: preferredProviders[0] || 'AWS' // Use first preferred provider
                     })
                 });
 
                 if (!profileResponse.ok) throw new Error('Failed to save profile');
+                const profileData = await profileResponse.json();
+                console.log('Profile saved:', profileData);
 
-                // Get matched offers
-                document.getElementById('offersContainer').innerHTML = '<p class="loading">Finding matched offers...</p>';
+                // Discover deals using Strands agent
+                document.getElementById('offersContainer').innerHTML = '<p class="loading">Discovering certification deals...</p>';
 
-                const offersResponse = await fetch(`${API_BASE}/offers?user_id=${userId}`);
-                if (!offersResponse.ok) throw new Error('Failed to get offers');
+                const dealsResponse = await fetch(API_BASE, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'discover_deals',
+                        providers: preferredProviders.length > 0 ? preferredProviders : ['AWS', 'Azure', 'Google Cloud']
+                    })
+                });
 
-                const offersData = await offersResponse.json();
-                displayOffers(offersData.matched_offers);
+                if (!dealsResponse.ok) throw new Error('Failed to discover deals');
+                const dealsData = await dealsResponse.json();
+                console.log('Deals discovered:', dealsData);
+
+                // Get personalized recommendations
+                document.getElementById('offersContainer').innerHTML = '<p class="loading">Getting personalized recommendations...</p>';
+
+                const recommendationsResponse = await fetch(API_BASE, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'get_recommendations',
+                        user_id: userId
+                    })
+                });
+
+                if (!recommendationsResponse.ok) throw new Error('Failed to get recommendations');
+                const recommendationsData = await recommendationsResponse.json();
+                console.log('Recommendations:', recommendationsData);
+
+                // Display the results
+                displayStrandsResults(dealsData.result, recommendationsData.result);
+
+                // Restore button state
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
 
             } catch (error) {
                 document.getElementById('offersContainer').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+
+                // Restore button state on error
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
             }
         });
 
-        function displayOffers(offers) {
+        function displayStrandsResults(dealsResult, recommendationsResult) {
             const container = document.getElementById('offersContainer');
 
-            if (!offers || offers.length === 0) {
-                container.innerHTML = '<p class="loading">No matching offers found. Check back later!</p>';
+            if (!dealsResult || !dealsResult.deals || dealsResult.deals.length === 0) {
+                container.innerHTML = '<p class="loading">No deals discovered. The Strands agent is working to find more!</p>';
                 return;
             }
 
-            const offersHtml = offers.map(offer => {
-                const matchClass = offer.match_score > 0.8 ? 'high-match' : 'medium-match';
-                const reasons = offer.match_reasons ? offer.match_reasons.join(', ') : 'Good match';
+            // Show summary
+            let html = `
+                <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3>🎉 Strands Agent Results</h3>
+                    <p><strong>Deals Discovered:</strong> ${dealsResult.deals_discovered}</p>
+                    <p><strong>Deals Stored:</strong> ${dealsResult.deals_stored}</p>
+                    <p><strong>Providers Searched:</strong> ${dealsResult.providers_searched.join(', ')}</p>
+                    <p><strong>Summary:</strong> ${dealsResult.summary}</p>
+                </div>
+            `;
 
+            // Show discovered deals
+            const dealsHtml = dealsResult.deals.map(deal => {
                 return `
-                    <div class="offer-card ${matchClass}">
+                    <div class="offer-card high-match">
                         <div class="offer-header">
-                            <span class="offer-provider">${offer.provider}</span>
-                            <span class="match-score">${Math.round(offer.match_score * 100)}% Match</span>
+                            <span class="offer-provider">${deal.provider}</span>
+                            <span class="match-score">Confidence: ${Math.round(deal.confidence_score * 100)}%</span>
                         </div>
                         
-                        <h3>${offer.cert_type || 'Certification Offer'}</h3>
+                        <h3>${deal.certification_name}</h3>
                         
                         <div class="offer-details">
                             <div class="detail-item">
                                 <span class="detail-label">Discount</span>
-                                <span class="detail-value">${offer.discount || 'See details'}</span>
+                                <span class="detail-value">${deal.discount_amount}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Price</span>
+                                <span class="detail-value">${deal.original_price} → ${deal.discounted_price}</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Eligibility</span>
-                                <span class="detail-value">${offer.eligibility || 'Check requirements'}</span>
+                                <span class="detail-value">${deal.eligibility}</span>
                             </div>
                             <div class="detail-item">
-                                <span class="detail-label">Why it matches</span>
-                                <span class="detail-value">${reasons}</span>
+                                <span class="detail-label">Expires</span>
+                                <span class="detail-value">${deal.expiry_date}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Quality</span>
+                                <span class="detail-value">${deal.deal_quality}</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Source</span>
-                                <span class="detail-value"><a href="${offer.source_url}" target="_blank">View Details</a></span>
+                                <span class="detail-value"><a href="${deal.source_url}" target="_blank">View Details</a></span>
                             </div>
                         </div>
                         
-                        <small>Discovered: ${new Date(offer.discovered_at).toLocaleDateString()}</small>
+                        <small>Discovered by Strands Agent: ${new Date(deal.discovered_at).toLocaleDateString()}</small>
                     </div>
                 `;
             }).join('');
 
-            container.innerHTML = offersHtml;
+            // Show personalized recommendations if available
+            if (recommendationsResult && recommendationsResult.recommendations && recommendationsResult.recommendations.length > 0) {
+                html += `
+                    <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                        <h3>🎯 Personalized Recommendations</h3>
+                        <p><strong>User Profile:</strong> ${recommendationsResult.user_profile.current_role} → ${recommendationsResult.user_profile.target_role}</p>
+                        <p><strong>Preferred Cloud:</strong> ${recommendationsResult.user_profile.preferred_cloud}</p>
+                        <p><strong>Recommendations:</strong> ${recommendationsResult.recommendations_count}</p>
+                    </div>
+                `;
+
+                const recommendationsHtml = recommendationsResult.recommendations.map(rec => {
+                    const deal = rec.deal;
+                    return `
+                        <div class="offer-card medium-match">
+                            <div class="offer-header">
+                                <span class="offer-provider">${deal.provider} (Recommended)</span>
+                                <span class="match-score">Relevance: ${Math.round(rec.relevance_score * 100)}%</span>
+                            </div>
+                            
+                            <h3>${deal.certification_name}</h3>
+                            <p><em>Why recommended: ${rec.reason}</em></p>
+                            
+                            <div class="offer-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">Discount</span>
+                                    <span class="detail-value">${deal.discount_amount}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Quality</span>
+                                    <span class="detail-value">${deal.deal_quality}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                html += recommendationsHtml;
+            }
+
+            html += dealsHtml;
+            container.innerHTML = html;
+        }
+
+        function displayOffers(offers) {
+            // Keep this for backward compatibility
+            displayStrandsResults({ deals: offers, deals_discovered: offers.length, deals_stored: offers.length, providers_searched: ['Demo'], summary: 'Demo data' }, null);
         }
 
         // Demo mode - show sample offers if API not available
-        if (API_BASE === 'YOUR_API_GATEWAY_URL') {
+        if (API_BASE === 'DEMO_MODE_DISABLED') {
             setTimeout(() => {
                 const sampleOffers = [
                     {

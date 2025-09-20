@@ -1,0 +1,4 @@
+# Minimal Lambda requirements
+# boto3 is already available in Lambda runtime
+requests>=2.31.0
+beautifulsoup4>=4.12.0

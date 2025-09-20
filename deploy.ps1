@@ -88,7 +88,7 @@ Set-Location "../.."
 # Bootstrap CDK (if needed)
 Write-Host "Bootstrapping CDK (if needed)..." -ForegroundColor Yellow
 Set-Location "cdk"
-cdk bootstrap aws://$env:AWS_ACCOUNT_ID/us-east-1
+cdk bootstrap
 if ($LASTEXITCODE -ne 0) {
     Write-Host "CDK bootstrap failed" -ForegroundColor Red
     exit 1
@@ -96,7 +96,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # Deploy the stacks
 Write-Host "Deploying stacks to AWS..." -ForegroundColor Yellow
-cdk deploy --all --require-approval never
+cdk deploy CertificationHunterStack --require-approval never
 if ($LASTEXITCODE -ne 0) {
     Write-Host "CDK deployment failed" -ForegroundColor Red
     exit 1
