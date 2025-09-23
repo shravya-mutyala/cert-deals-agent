@@ -1,14 +1,14 @@
 # 🎯 Certification Deals Hunter
 
-An intelligent web application that discovers and matches certification deals to user profiles using AWS Lambda, DynamoDB, and real-time web scraping.
+An intelligent web application that discovers and matches certification deals to user profiles using AWS Lambda, DynamoDB, and AI-powered search capabilities.
 
-## 🌟 Features
+## 🌟 Current Features
 
-- **🔍 Real-time Deal Discovery**: Scrapes certification providers (AWS, Azure, Google Cloud) for current deals
-- **🎯 Personalized Matching**: AI-powered recommendations based on user profiles
-- **💬 Interactive Chat Agent**: Conversational interface for deal discovery and career advice
-- **📊 Market Analysis**: Trends and insights from collected certification data
-- **🚀 Auto-scroll UI**: Seamless user experience with automatic navigation
+- **🔍 Smart Deal Discovery**: Uses Google Search API and web scraping to find current certification deals
+- **🎯 Personalized Matching**: AI-powered recommendations based on user profiles and preferences
+- **💬 Interactive Chat Interface**: Conversational AI agent for deal discovery and career guidance
+- **📊 Multi-Provider Support**: Covers AWS, Azure, Google Cloud, Databricks, and Salesforce certifications
+- **🚀 Responsive Web UI**: Clean, modern interface with auto-scroll and real-time updates
 - **☁️ Serverless Architecture**: Built on AWS Lambda, DynamoDB, and API Gateway
 
 ## 🏗️ Architecture
@@ -35,17 +35,27 @@ An intelligent web application that discovers and matches certification deals to
 - AWS CLI configured with appropriate permissions
 - AWS CDK installed (`npm install -g aws-cdk`)
 - Python 3.11+
+- Google Search API credentials (optional, for enhanced search)
 
-### 1. Clone and Setup
+### 1. Environment Setup
 
 ```bash
+# Clone the repository
 git clone <repository-url>
 cd cert-deals-agent
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your AWS account details and API keys
 ```
 
 ### 2. Deploy Infrastructure
 
 ```bash
+# Use the automated deployment script
+python deploy_strands_to_aws.py
+
+# Or deploy manually
 cd cdk
 cdk bootstrap  # First time only
 cdk deploy CertificationHunterStack
@@ -53,18 +63,19 @@ cdk deploy CertificationHunterStack
 
 ### 3. Access the Application
 
-After deployment, CDK will output your application URLs:
-- **Frontend**: Open `frontend/index.html` in your browser
-- **API Endpoint**: Use the `StrandsAgentEndpoint` output value
+After deployment, you'll get:
+- **Website URL**: Your hosted frontend application
+- **API Endpoint**: For direct API access
+- **Chat Interface**: AI-powered conversational agent
 
 ## 📁 Project Structure
 
 ```
 cert-deals-agent/
 ├── 📁 frontend/                 # Web application
-│   ├── index.html              # Main application page
-│   ├── agent-chat.html         # Chat interface
-│   └── logos/                  # Provider logos
+│   ├── index.html              # Main application interface
+│   ├── agent-chat.html         # AI chat interface
+│   └── logos/                  # Provider logos and assets
 ├── 📁 lambda/                  # AWS Lambda functions
 │   └── strands_agent_lambda/   # Main Lambda function
 │       └── lambda_function.py  # Core application logic
@@ -72,7 +83,8 @@ cert-deals-agent/
 │   ├── app.py                  # CDK application entry point
 │   └── stacks/                 # CDK stack definitions
 ├── 📁 docs/                    # Documentation
-├── deploy_strands_to_aws.py    # Main deployment script
+├── 📁 tests/                   # Test files
+├── deploy_strands_to_aws.py    # Automated deployment script
 ├── requirements.txt            # Python dependencies
 └── README.md                   # This file
 ```
@@ -81,34 +93,39 @@ cert-deals-agent/
 
 ### Main Application
 
-1. **Fill Your Profile**: Enter your name, location, target certifications, and preferred providers
-2. **Find Deals**: Click "Find My Certification Deals" - the page auto-scrolls to results
-3. **View Results**: See personalized deals with discounts, eligibility, and source links
+1. **Complete Your Profile**: Enter your details, target certifications, and preferred providers
+2. **Discover Deals**: Click "Find My Certification Deals" to get personalized recommendations
+3. **Review Results**: Browse deals with discounts, eligibility requirements, and direct links
+4. **Save Preferences**: Your profile is saved for future personalized recommendations
 
-### Chat Agent
+### AI Chat Agent
 
-1. **Open Chat**: Click "Chat with AI Agent" button
+1. **Access Chat**: Click "Chat with AI Agent" for conversational assistance
 2. **Ask Questions**: 
-   - "Find me AWS deals"
-   - "What are the latest Azure offers?"
-   - "Show me market trends"
-   - "Give me recommendations"
+   - "Find me AWS certification deals"
+   - "What's the best path to become a cloud architect?"
+   - "Compare Azure vs AWS certification costs"
+   - "Show me deals expiring soon"
+3. **Get Recommendations**: Receive personalized career and certification guidance
 
 ## 🔧 API Actions
 
 The Lambda function supports these actions:
 
-- `discover_deals`: Find and store certification deals
-- `save_profile`: Save user preferences
-- `get_recommendations`: Get personalized suggestions
-- `analyze_trends`: Market analysis and insights
+- `discover_deals`: Find and store certification deals using Google Search API and web scraping
+- `save_profile`: Save user preferences and profile information
+- `get_recommendations`: Get personalized deal recommendations based on user profile
+- `analyze_trends`: Market analysis and insights from collected data
+- `search_deals`: Search for specific types of certification deals
+- `get_user_profile`: Retrieve saved user profile and preferences
 
 ## 🌐 Supported Providers
 
 - **AWS**: Amazon Web Services certifications
 - **Azure**: Microsoft Azure certifications  
 - **Google Cloud**: Google Cloud Platform certifications
-- **Extensible**: Easy to add new providers
+- **Databricks**: Databricks Certification Platform
+- **Salesforce**: Salesforce Certification Platform
 
 ## 🛠️ Development
 
@@ -118,28 +135,33 @@ The Lambda function supports these actions:
 # Install dependencies
 pip install -r requirements.txt
 
+# Test API endpoint
+python tests/test_api.py
+
 # Test Lambda function locally
 python -c "from lambda.strands_agent_lambda.lambda_function import lambda_handler; print(lambda_handler({'action': 'discover_deals'}, {}))"
 ```
 
-### Adding New Providers
+### Adding New Features
 
-1. Add scraping logic in `lambda_function.py`
-2. Update provider list in frontend
-3. Add provider logos to `frontend/logos/`
+1. **New Provider**: Add scraping logic in `lambda_function.py`
+2. **New UI Component**: Extend frontend HTML/CSS/JS files
+3. **New API Action**: Add handler in Lambda function
+4. **New Infrastructure**: Update CDK stack definitions
 
 ## 📊 Data Storage
 
 ### DynamoDB Tables
 
-- **certification-offers**: Stores discovered deals
-- **certification-users**: Stores user profiles and preferences
+- **certification-offers**: Stores discovered deals with metadata, confidence scores, and expiry dates
+- **certification-users**: Stores user profiles, preferences, and interaction history
 
 ### Data Flow
 
-1. User submits profile → Saved to `certification-users`
-2. System discovers deals → Stored in `certification-offers`
-3. Recommendations generated → Based on user profile + available deals
+1. **Discovery**: Google Search API + web scraping → deals stored in `certification-offers`
+2. **User Profile**: Form submission → saved to `certification-users`
+3. **Matching**: AI-powered matching → personalized recommendations
+4. **Analytics**: Usage patterns and deal effectiveness tracking
 
 ## 🔒 Security
 
