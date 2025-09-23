@@ -48,8 +48,6 @@ class CertificationHunterStack(Stack):
         )
 
         # Lambda Functions
-        self.scraper_function = self._create_scraper_lambda()
-        self.matcher_function = self._create_matcher_lambda()
         self.strands_agent_function = self._create_strands_agent_lambda()
         
         # API Gateway
@@ -58,52 +56,7 @@ class CertificationHunterStack(Stack):
         # EventBridge for scheduling
         self._create_scheduler()
 
-    def _create_scraper_lambda(self):
-        function = _lambda.Function(
-            self, "ScraperFunction",
-            runtime=_lambda.Runtime.PYTHON_3_11,
-            handler="scraper.handler",
-            code=_lambda.Code.from_asset("../lambda/scraper"),
-            timeout=Duration.minutes(5),
-            environment={
-                "OFFERS_TABLE": self.offers_table.table_name,
-                "ASSETS_BUCKET": self.assets_bucket.bucket_name
-            }
-        )
-        
-        self.offers_table.grant_write_data(function)
-        self.assets_bucket.grant_write(function)
-        
-        # Bedrock permissions
-        function.add_to_role_policy(iam.PolicyStatement(
-            actions=["bedrock:InvokeModel", "bedrock:InvokeAgent"],
-            resources=["*"]
-        ))
-        
-        return function
 
-    def _create_matcher_lambda(self):
-        function = _lambda.Function(
-            self, "MatcherFunction",
-            runtime=_lambda.Runtime.PYTHON_3_11,
-            handler="matcher.handler", 
-            code=_lambda.Code.from_asset("../lambda/matcher"),
-            timeout=Duration.minutes(2),
-            environment={
-                "OFFERS_TABLE": self.offers_table.table_name,
-                "USERS_TABLE": self.users_table.table_name
-            }
-        )
-        
-        self.offers_table.grant_read_data(function)
-        self.users_table.grant_read_write_data(function)
-        
-        function.add_to_role_policy(iam.PolicyStatement(
-            actions=["bedrock:InvokeModel"],
-            resources=["*"]
-        ))
-        
-        return function
 
     def _create_strands_agent_lambda(self):
         """Create Strands Agent Lambda function"""
@@ -116,7 +69,9 @@ class CertificationHunterStack(Stack):
             memory_size=512,
             environment={
                 "OFFERS_TABLE": self.offers_table.table_name,
-                "USERS_TABLE": self.users_table.table_name
+                "USERS_TABLE": self.users_table.table_name,
+                "GOOGLE_SEARCH_API_KEY": os.environ.get("GOOGLE_SEARCH_API_KEY", "AIzaSyDCk-_SnedDJTgf3Xk9OCntP_fhkjlgvyU"),
+                "GOOGLE_SEARCH_ENGINE_ID": os.environ.get("GOOGLE_SEARCH_ENGINE_ID", "5054e8a14948642be")
             }
         )
         
@@ -138,13 +93,13 @@ class CertificationHunterStack(Stack):
             rest_api_name="Certification Hunter API"
         )
         
-        # Offers endpoint
+        # All endpoints use the strands agent function
         offers = api.root.add_resource("offers")
-        offers.add_method("GET", apigateway.LambdaIntegration(self.matcher_function))
+        offers.add_method("GET", apigateway.LambdaIntegration(self.strands_agent_function))
         
         # Users endpoint  
         users = api.root.add_resource("users")
-        users.add_method("POST", apigateway.LambdaIntegration(self.matcher_function))
+        users.add_method("POST", apigateway.LambdaIntegration(self.strands_agent_function))
         
         # Strands Agent endpoint
         strands = api.root.add_resource("strands")
@@ -171,12 +126,12 @@ class CertificationHunterStack(Stack):
         return api
 
     def _create_scheduler(self):
-        # Daily scraping schedule
+        # Daily scraping schedule (using strands agent function)
         rule = events.Rule(
             self, "DailyScrapeRule",
             schedule=events.Schedule.cron(hour="6", minute="0")
         )
-        rule.add_target(targets.LambdaFunction(self.scraper_function))
+        rule.add_target(targets.LambdaFunction(self.strands_agent_function))
         
         # Deploy frontend
         self._deploy_frontend()

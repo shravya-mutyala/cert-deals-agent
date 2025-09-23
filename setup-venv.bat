@@ -4,7 +4,7 @@ echo 🐍 Setting up Python Virtual Environment for Certification Coupon Hunter
 REM Check Python version
 python --version
 if %errorlevel% neq 0 (
-    echo ❌ Python not found. Please install Python 3.11+
+    echo ERROR: Python not found. Please install Python 3.11+
     pause
     exit /b 1
 )
@@ -35,9 +35,9 @@ REM Install Lambda dependencies locally for development
 echo Installing Lambda dependencies for local development...
 pip install boto3 requests beautifulsoup4 lxml
 
-echo ✅ Virtual environment setup complete!
+echo SUCCESS: Virtual environment setup complete!
 echo.
-echo 📝 To activate the environment in the future:
+echo INFO: To activate the environment in the future:
 echo    venv\Scripts\activate.bat
 echo.
 echo 📝 To deactivate:

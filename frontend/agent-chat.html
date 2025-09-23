@@ -227,14 +227,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 AI Certification Agent</h1>
-            <p>Your intelligent assistant for certification deals and career planning</p>
+            <h1>Learning Resource Agent</h1>
+            <p>Quick access to trusted platforms, docs, and workshops for your certification journey.</p>
         </div>
 
         <div class="chat-container">
             <div class="chat-header">
-                <h2>Chat with Your Certification Expert</h2>
-                <p>Ask about deals, career paths, or certification recommendations</p>
+                <h2>Find Helpful Resources With Your Expert</h2>
             </div>
 
             <div class="chat-messages" id="chatMessages">
@@ -243,12 +242,15 @@
                     <div class="message-content">
                         <p>Hello! I'm your AI Certification Agent. I can help you:</p>
                         <ul style="margin: 10px 0; padding-left: 20px;">
-                            <li>Find the best certification deals across all major providers</li>
+                            <li>Find official learning resources from AWS, Azure, Google Cloud, Salesforce, and
+                                Databricks</li>
+                            <li>Search for specific certification information and answers</li>
                             <li>Plan your certification career path</li>
                             <li>Analyze eligibility requirements</li>
                             <li>Recommend optimal learning sequences</li>
                         </ul>
-                        <p>What would you like to explore today?</p>
+                        <p>Use the buttons below for quick access to learning resources, or ask me any specific
+                            questions about certifications!</p>
                     </div>
                 </div>
             </div>
@@ -259,20 +261,21 @@
 
             <div class="chat-input-container">
                 <div class="quick-actions">
-                    <div class="quick-action" onclick="sendQuickMessage('Find AWS certification deals')">Find AWS Deals
-                    </div>
-                    <div class="quick-action"
-                        onclick="sendQuickMessage('Plan my career path from developer to cloud architect')">Career
-                        Planning</div>
-                    <div class="quick-action"
-                        onclick="sendQuickMessage('What certifications should I get for DevOps?')">DevOps Certs</div>
-                    <div class="quick-action" onclick="sendQuickMessage('Compare Azure vs AWS certifications')">Compare
-                        Providers</div>
+                    <div class="quick-action" onclick="sendQuickMessage('Find resources for learning AWS')">Find
+                        resources for learning AWS</div>
+                    <div class="quick-action" onclick="sendQuickMessage('Find resources for learning Azure')">Find
+                        resources for learning Azure</div>
+                    <div class="quick-action" onclick="sendQuickMessage('Find resources for learning Google Cloud')">
+                        Find resources for learning Google Cloud</div>
+                    <div class="quick-action" onclick="sendQuickMessage('Find resources for learning Salesforce')">Find
+                        resources for learning Salesforce</div>
+                    <div class="quick-action" onclick="sendQuickMessage('Find resources for learning Databricks')">Find
+                        resources for learning Databricks</div>
                 </div>
 
                 <form class="chat-input-form" id="chatForm">
                     <input type="text" class="chat-input" id="chatInput"
-                        placeholder="Ask about certification deals, career paths, or recommendations..." required />
+                        placeholder="Ask any certification question or use buttons for quick resources..." required />
                     <button type="submit" class="send-button" id="sendButton">
                         ➤
                     </button>
@@ -302,10 +305,11 @@
         });
 
         function sendQuickMessage(message) {
-            sendMessage(message);
+            // Mark as button-triggered for static responses
+            sendMessage(message, true);
         }
 
-        async function sendMessage(message) {
+        async function sendMessage(message, isButtonTriggered = false) {
             // Add user message to chat
             addMessage('user', message);
 
@@ -313,8 +317,8 @@
             showTyping(true);
 
             try {
-                // Call Bedrock Agent API
-                const response = await callBedrockAgent(message);
+                // Call Bedrock Agent API with button context
+                const response = await callBedrockAgent(message, isButtonTriggered);
 
                 // Hide typing indicator
                 showTyping(false);
@@ -329,14 +333,14 @@
             }
         }
 
-        async function callBedrockAgent(message) {
+        async function callBedrockAgent(message, isButtonTriggered = false) {
             // Call the actual Lambda function with proper format
-            console.log('🤖 Calling agent with message:', message);
+            console.log('INFO: Calling agent with message:', message);
 
             try {
-                // Smart intent detection based on user message
-                const intent = detectUserIntent(message);
-                console.log('🧠 Detected intent:', intent);
+                // Smart intent detection based on user message and button context
+                const intent = detectUserIntent(message, isButtonTriggered);
+                console.log('INFO: Detected intent:', intent);
 
                 let action, payload;
 
@@ -347,17 +351,29 @@
                     case 'help':
                         return getHelpResponse();
 
-                    case 'career_advice':
-                        return getCareerAdviceResponse(message);
+                    // NEW: Static learning resources for button-triggered actions
+                    case 'static_resources_aws':
+                        return getStaticAWSResourcesResponse();
 
-                    case 'general_question':
-                        return getGeneralResponse(message);
+                    case 'static_resources_azure':
+                        return getStaticAzureResourcesResponse();
 
-                    case 'discover_deals':
-                        action = 'discover_deals';
+                    case 'static_resources_gcp':
+                        return getStaticGCPResourcesResponse();
+
+                    case 'static_resources_salesforce':
+                        return getStaticSalesforceResourcesResponse();
+
+                    case 'static_resources_databricks':
+                        return getStaticDatabricksResourcesResponse();
+
+                    // Google CSE search for free-form queries
+                    case 'google_search':
+                        action = 'google_search';
                         payload = {
-                            action: 'discover_deals',
-                            providers: intent.providers || ['AWS', 'Azure', 'Google Cloud']
+                            action: 'google_search',
+                            query: intent.query,
+                            context: 'certification_assistant'
                         };
                         break;
 
@@ -372,14 +388,6 @@
                         };
                         break;
 
-                    case 'get_recommendations':
-                        action = 'get_recommendations';
-                        payload = {
-                            action: 'get_recommendations',
-                            user_id: 'chat_user'
-                        };
-                        break;
-
                     case 'analyze_trends':
                         action = 'analyze_trends';
                         payload = {
@@ -388,8 +396,14 @@
                         break;
 
                     default:
-                        // Default to a conversational response instead of always discovering deals
-                        return getConversationalResponse(message);
+                        // Default to Google search for unknown queries
+                        action = 'google_search';
+                        payload = {
+                            action: 'google_search',
+                            query: message,
+                            context: 'general'
+                        };
+                        break;
                 }
 
                 // Only make API calls for specific actions that need backend data
@@ -397,7 +411,7 @@
                     return getConversationalResponse(message);
                 }
 
-                console.log('📤 Sending payload:', payload);
+                console.log('INFO: Sending payload:', payload);
 
                 const response = await fetch(BEDROCK_AGENT_API, {
                     method: 'POST',
@@ -408,427 +422,228 @@
                 });
 
                 if (!response.ok) {
-                    console.error('❌ API request failed:', response.status, response.statusText);
+                    console.error('ERROR: API request failed:', response.status, response.statusText);
                     throw new Error(`Agent API request failed: ${response.status}`);
                 }
 
                 const data = await response.json();
-                console.log('📥 Received response:', data);
+                console.log('INFO: Received response:', data);
 
                 if (data.success && data.result) {
+                    // Check if fallback was used and notify user
+                    if (data.result.fallback_used) {
+                        console.log('WARNING: Fallback method was used');
+                    }
+                    if (data.result.api_errors && data.result.api_errors.length > 0) {
+                        console.log('WARNING: API errors occurred:', data.result.api_errors);
+                    }
                     return formatAgentResponse(data.result, action, message);
                 } else {
                     throw new Error(data.message || 'Agent returned an error');
                 }
 
             } catch (error) {
-                console.error('❌ Agent call error:', error);
-                return `I apologize, but I encountered an error: ${error.message}. Let me try to help you with some general information about certification deals instead.`;
+                console.error('ERROR: Agent call error:', error);
+                return `I apologize, but I encountered an error: ${error.message}.`;
             }
         }
 
-        function detectUserIntent(message) {
+        function detectUserIntent(message, isButtonTriggered = false) {
             const lowerMessage = message.toLowerCase();
 
-            // Greeting patterns
+            // If triggered by button, use new static resource responses
+            if (isButtonTriggered) {
+                if (lowerMessage.includes('learning aws')) return { type: 'static_resources_aws' };
+                if (lowerMessage.includes('learning azure')) return { type: 'static_resources_azure' };
+                if (lowerMessage.includes('learning google cloud')) return { type: 'static_resources_gcp' };
+                if (lowerMessage.includes('learning salesforce')) return { type: 'static_resources_salesforce' };
+                if (lowerMessage.includes('learning databricks')) return { type: 'static_resources_databricks' };
+            }
+
+            // Keep basic static responses for simple interactions
             if (/^(hi|hello|hey|good morning|good afternoon|good evening)/.test(lowerMessage)) {
                 return { type: 'greeting' };
             }
 
-            // Help patterns
             if (lowerMessage.includes('help') || lowerMessage.includes('what can you do') || lowerMessage.includes('how to')) {
                 return { type: 'help' };
             }
 
-            // Career advice patterns
-            if (lowerMessage.includes('career') || lowerMessage.includes('path') || lowerMessage.includes('roadmap') ||
-                lowerMessage.includes('should i') || lowerMessage.includes('which certification') ||
-                lowerMessage.includes('best certification') || lowerMessage.includes('start with')) {
-                return { type: 'career_advice' };
-            }
-
-            // Deal discovery patterns
-            if (lowerMessage.includes('find') && (lowerMessage.includes('deal') || lowerMessage.includes('discount') || lowerMessage.includes('offer'))) {
-                const providers = [];
-                if (lowerMessage.includes('aws')) providers.push('AWS');
-                if (lowerMessage.includes('azure')) providers.push('Azure');
-                if (lowerMessage.includes('google') || lowerMessage.includes('gcp')) providers.push('Google Cloud');
-
-                return { type: 'discover_deals', providers: providers.length > 0 ? providers : null };
-            }
-
-            // Profile saving patterns
-            if (lowerMessage.includes('save') && (lowerMessage.includes('profile') || lowerMessage.includes('preference'))) {
-                return { type: 'save_profile' };
-            }
-
-            // Recommendations patterns
-            if (lowerMessage.includes('recommend') || lowerMessage.includes('suggest') || lowerMessage.includes('advice') ||
-                lowerMessage.includes('what should') || lowerMessage.includes('personalized')) {
-                return { type: 'get_recommendations' };
-            }
-
-            // Trends/analysis patterns
-            if (lowerMessage.includes('trend') || lowerMessage.includes('analysis') || lowerMessage.includes('market') ||
-                lowerMessage.includes('statistics') || lowerMessage.includes('data')) {
-                return { type: 'analyze_trends' };
-            }
-
-            // General questions about certifications
-            if (lowerMessage.includes('certification') || lowerMessage.includes('exam') || lowerMessage.includes('aws') ||
-                lowerMessage.includes('azure') || lowerMessage.includes('google cloud') || lowerMessage.includes('cloud')) {
-                return { type: 'general_question' };
-            }
-
-            // Default to conversational
-            return { type: 'conversational' };
+            // Everything else → Google CSE search for specific questions
+            return { type: 'google_search', query: message };
         }
 
         function getGreetingResponse() {
-            return `Hello! 👋 I'm your certification deals assistant. I can help you with:
-
-🔍 **Finding Deals**: "Find AWS certification deals"
-🎯 **Career Advice**: "What certification should I start with?"
-📊 **Recommendations**: "Give me personalized suggestions"
-📈 **Market Trends**: "Show me certification market trends"
-💾 **Save Profile**: "Save my preferences"
-
-What would you like to know about certification deals and career paths?`;
+            return `Hello! Ask me for official learning resources (e.g., "Find resources for learning AWS/Azure/Google Cloud/Salesforce/Databricks") and I'll share the best starting points.`;
         }
 
         function getHelpResponse() {
-            return `I'm here to help you with certification deals and career planning! Here's what I can do:
-
-**🔍 Deal Discovery**
-- "Find AWS deals"
-- "Show me Azure discounts"
-- "What Google Cloud offers are available?"
-
-**🎯 Career Guidance**
-- "What certification should I start with?"
-- "Best path from developer to cloud architect"
-- "Which AWS certification is right for me?"
-
-**📊 Personalized Help**
-- "Give me recommendations"
-- "Suggest certifications for my profile"
-- "What deals match my goals?"
-
-**📈 Market Insights**
-- "Show me market trends"
-- "Which provider has the best deals?"
-- "Analyze certification data"
-
-Just ask me anything about certifications and I'll help you find the best deals and career path!`;
+            return `I can share official learning portals, docs, and workshops for major providers. Try:\n\n**Find resources for learning AWS**\n**Find resources for learning Azure**\n**Find resources for learning Google Cloud**\n**Find resources for learning Salesforce**\n**Find resources for learning Databricks**`;
         }
+
+        // ---------- NEW: Static resource responses with clickable links ----------
+
+        function getStaticAWSResourcesResponse() {
+            return `**Official AWS Learning Resources**\n\n
+• <a href="https://skillbuilder.aws/" target="_blank" rel="noopener noreferrer">AWS Skill Builder</a> — on-demand courses & learning plans<br>
+• <a href="https://aws.amazon.com/builder/" target="_blank" rel="noopener noreferrer">AWS Builder Labs</a> — guided hands-on labs<br>
+• <a href="https://aws.amazon.com/education/awseducate/" target="_blank" rel="noopener noreferrer">AWS Educate</a> — free beginner content for students/learners<br>
+• <a href="https://workshops.aws/" target="_blank" rel="noopener noreferrer">AWS Workshops</a> — curated, hands-on workshops<br>
+• <a href="https://docs.aws.amazon.com/" target="_blank" rel="noopener noreferrer">AWS Documentation</a> — service docs, tutorials, best practices<br>
+• <a href="https://aws.amazon.com/certification/" target="_blank" rel="noopener noreferrer">AWS Certification</a> — paths, exam guides, prep\n\n
+Want anything more specific (e.g., Architect vs. Data)?`;
+        }
+
+        function getStaticAzureResourcesResponse() {
+            return `**Official Microsoft Azure Learning Resources**\n\n
+• <a href="https://learn.microsoft.com/training/" target="_blank" rel="noopener noreferrer">Microsoft Learn</a> — free interactive modules & learning paths<br>
+• <a href="https://learn.microsoft.com/azure/" target="_blank" rel="noopener noreferrer">Azure Documentation</a> — service docs, samples, quickstarts<br>
+• <a href="https://microsoft.github.io/WhatTheHack/" target="_blank" rel="noopener noreferrer">What The Hack</a> — open-source workshop-style scenarios<br>
+• <a href="https://learn.microsoft.com/training/azure/" target="_blank" rel="noopener noreferrer">Azure Learning Paths</a> — curated Azure tracks\n\n
+Need resources for a specific role (e.g., Administrator, Developer)?`;
+        }
+
+        function getStaticGCPResourcesResponse() {
+            return `**Official Google Cloud Learning Resources**\n\n
+• <a href="https://www.cloudskillsboost.google/" target="_blank" rel="noopener noreferrer">Cloud Skills Boost</a> — hands-on labs, quests, and courses<br>
+• <a href="https://cloud.google.com/training" target="_blank" rel="noopener noreferrer">Google Cloud Training</a> — learning paths & instructor-led training<br>
+• <a href="https://cloud.google.com/docs" target="_blank" rel="noopener noreferrer">Google Cloud Docs</a> — product docs & quickstarts<br>
+• <a href="https://cloud.google.com/certification" target="_blank" rel="noopener noreferrer">Google Cloud Certification</a> — paths, exam guides, prep\n\n
+Want Data/ML-specific tracks? I can point you to the right quests.`;
+        }
+
+        function getStaticSalesforceResourcesResponse() {
+            return `**Official Salesforce Learning Resources (Trailhead)**\n\n
+• <a href="https://trailhead.salesforce.com/" target="_blank" rel="noopener noreferrer">Trailhead</a> — free, gamified learning modules & trails<br>
+• <a href="https://trailheadacademy.salesforce.com/certification-overview" target="_blank" rel="noopener noreferrer">Salesforce Credentials</a> — certifications & exam guides<br>
+• <a href="https://help.salesforce.com/s/" target="_blank" rel="noopener noreferrer">Salesforce Help & Docs</a> — official product documentation<br>
+• <a href="https://trailhead.salesforce.com/superbadges" target="_blank" rel="noopener noreferrer">Superbadges</a> — hands-on, scenario-based challenges\n\n
+Tell me your role (Admin/Dev/Consultant) and I’ll suggest a Trailmix.`;
+        }
+
+        function getStaticDatabricksResourcesResponse() {
+            return `**Official Databricks Learning Resources**\n\n
+• <a href="https://www.databricks.com/databricks-academy-labs" target="_blank" rel="noopener noreferrer">Databricks Academy Labs</a> — learning paths, courses, and exams<br>
+• <a href="https://docs.databricks.com/" target="_blank" rel="noopener noreferrer">Databricks Documentation</a> — product docs & quickstarts<br>
+• <a href="https://www.databricks.com/learn" target="_blank" rel="noopener noreferrer">Learn on Databricks</a> — self-paced content & webinars<br>
+• <a href="https://www.databricks.com/resources?type=workshop" target="_blank" rel="noopener noreferrer">Workshops</a> — upcoming workshops & hands-on sessions\n\n
+Looking for Data Engineer vs. ML Engineer tracks? I can tailor links.`;
+        }
+
+        // ----------------------------------------------------------------------
 
         function getCareerAdviceResponse(message) {
             const lowerMessage = message.toLowerCase();
 
             if (lowerMessage.includes('start') || lowerMessage.includes('beginner')) {
-                return `🎯 **Great question about starting your certification journey!**
-
-For beginners, I recommend this path:
-
-**1. Start with Fundamentals:**
-- AWS Cloud Practitioner (easiest entry point)
-- Azure Fundamentals (AZ-900)
-- Google Cloud Digital Leader
-
-**2. Then move to Associate level:**
-- AWS Solutions Architect Associate
-- Azure Administrator Associate
-- Google Cloud Associate Engineer
-
-**3. Consider your background:**
-- **Developer?** Start with AWS Developer Associate
-- **System Admin?** Try Azure Administrator
-- **Data focused?** Look at Google Cloud Data Engineer
-
-Would you like me to find current deals for any of these certifications? Just say "Find [provider] deals" and I'll search for you!`;
+                return `**Great question about starting your certification journey!**\n\n
+For beginners, consider these fundamentals:\n
+• AWS Cloud Practitioner\n
+• Azure Fundamentals (AZ-900)\n
+• Google Cloud Digital Leader\n\n
+Then move to associate/professional based on your role.`;
             }
 
             if (lowerMessage.includes('aws')) {
-                return `🚀 **AWS Certification Path Advice:**
-
-**For beginners:**
-1. AWS Cloud Practitioner (foundational)
-2. AWS Solutions Architect Associate (most popular)
-
-**For developers:**
-1. AWS Developer Associate
-2. AWS DevOps Engineer Professional
-
-**For system admins:**
-1. AWS SysOps Administrator Associate
-2. AWS Solutions Architect Professional
-
-**Current market insight:** AWS certifications have the highest demand and often the best deals for students.
-
-Want me to find current AWS deals for you? Just ask "Find AWS deals"!`;
+                return `**AWS Certification Path Advice:**\n\n
+Start with Cloud Practitioner → Solutions Architect Associate (popular), then specialize as needed.`;
             }
 
-            return `🎯 **Career Path Guidance:**
-
-The best certification depends on your goals:
-
-**🏗️ Architecture Focus:** AWS/Azure Solutions Architect
-**💻 Development Focus:** AWS Developer, Azure Developer
-**☁️ Cloud Operations:** AWS SysOps, Azure Administrator  
-**📊 Data & Analytics:** Google Cloud Data Engineer, AWS Data Analytics
-
-**My recommendation:** Start with cloud fundamentals, then specialize based on your career goals.
-
-Would you like me to find deals for a specific provider or get personalized recommendations based on your profile?`;
+            return `**Career Path Guidance:**\n\n
+The best certification depends on your goals. Start with fundamentals, then specialize (Architecture, DevOps, Data/ML, Security).`;
         }
 
         function getGeneralResponse(message) {
             const lowerMessage = message.toLowerCase();
 
             if (lowerMessage.includes('aws')) {
-                return `☁️ **About AWS Certifications:**
-
-AWS offers certifications at 4 levels:
-- **Foundational:** Cloud Practitioner
-- **Associate:** Solutions Architect, Developer, SysOps
-- **Professional:** Solutions Architect, DevOps Engineer  
-- **Specialty:** Security, Machine Learning, etc.
-
-**Popular deals:** AWS often offers student discounts and free retakes.
-
-Want me to find current AWS deals? Just say "Find AWS deals"!`;
+                return `☁️ **About AWS Certifications:** Foundations → Associate → Professional/Specialty. Ask for "Find resources for learning AWS" to get official links.`;
             }
 
             if (lowerMessage.includes('azure')) {
-                return `🔷 **About Microsoft Azure Certifications:**
-
-Azure certifications are role-based:
-- **Fundamentals:** AZ-900 (often free!)
-- **Associate:** Administrator, Developer, Security Engineer
-- **Expert:** Solutions Architect, DevOps Engineer
-
-**Popular deals:** Microsoft frequently offers free exam vouchers through Microsoft Learn.
-
-Want me to find current Azure deals? Just say "Find Azure deals"!`;
+                return `🔷 **About Microsoft Azure Certifications:** Role-based. Ask for "Find resources for learning Azure" to see Microsoft Learn links.`;
             }
 
-            return `💡 **Certification Information:**
-
-I can help you with certifications from:
-- **AWS** (most popular, great for cloud architecture)
-- **Microsoft Azure** (enterprise-focused, often free fundamentals)
-- **Google Cloud** (data and ML focused, good training credits)
-
-What specific information are you looking for? I can find deals, give career advice, or provide recommendations!`;
+            return `💡 **Certification Information:** Ask me for resources for AWS, Azure, Google Cloud, Salesforce, or Databricks.`;
         }
 
         function getConversationalResponse(message) {
-            return `I understand you're asking about "${message}". 
-
-I'm specialized in helping with certification deals and career paths. Here are some things I can help you with:
-
-🔍 **"Find AWS deals"** - Discover current certification discounts
-🎯 **"What certification should I start with?"** - Get career advice  
-📊 **"Give me recommendations"** - Personalized suggestions
-📈 **"Show me trends"** - Market analysis and insights
-
-What would you like to know about certification deals or career planning?`;
+            return `I understand you're asking about "${message}". You can say things like "Find resources for learning AWS/Azure/Google Cloud/Salesforce/Databricks".`;
         }
 
+        // (unchanged) other helpers: formatAgentResponse, getMockResponse (unused for resources), etc.
         function formatAgentResponse(result, action, originalMessage) {
-            console.log('🎨 Formatting response for action:', action);
+            console.log('INFO: Formatting response for action:', action);
 
             switch (action) {
-                case 'discover_deals':
-                    if (result.deals && result.deals.length > 0) {
-                        let response = `🎉 Great! I found ${result.deals_discovered} certification deals for you!\n\n`;
+                case 'google_search':
+                    if (result.response_type === 'deal_results') {
+                        let response = `**${result.message}**\n\n`;
 
-                        result.deals.forEach((deal, index) => {
-                            response += `**${index + 1}. ${deal.provider} - ${deal.certification_name}**\n`;
-                            response += `💰 Discount: ${deal.discount_amount}\n`;
-                            response += `📅 Expires: ${deal.expiry_date}\n`;
-                            response += `👥 Eligibility: ${deal.eligibility}\n`;
-                            response += `🔗 Source: ${deal.source_url}\n\n`;
-                        });
-
-                        // Only show storage message if deals were actually stored
-                        if (result.deals_stored > 0) {
-                            response += `✅ I've stored ${result.deals_stored} deals in your database for future reference!`;
+                        if (result.deals && result.deals.length > 0) {
+                            response += `**Found Deals:**\n\n`;
+                            result.deals.forEach((deal, index) => {
+                                response += `**${index + 1}. ${deal.provider} - ${deal.certification_name || deal.title}**\n`;
+                                if (deal.snippet) {
+                                    response += `${deal.snippet}\n`;
+                                }
+                                if (deal.active_challenge) {
+                                    response += `🎯 **Active Challenge:** <a href="${deal.challenge_url}" target="_blank" rel="noopener noreferrer">${deal.active_challenge}</a>\n`;
+                                }
+                                response += `📋 **Source:** <a href="${deal.source_url}" target="_blank" rel="noopener noreferrer">${deal.source_name || 'View Details'}</a>\n`;
+                                response += `🏛️ **Official Page:** <a href="https://aws.amazon.com/certification/" target="_blank" rel="noopener noreferrer">AWS Certification</a>\n\n`;
+                            });
+                        } else {
+                            response += `No specific deals found, but you can check the official AWS certification page: <a href="https://aws.amazon.com/certification/" target="_blank" rel="noopener noreferrer">AWS Certification</a>`;
                         }
-                        return response;
-                    } else {
-                        return "I searched for certification deals but didn't find any current offers. Let me keep looking for you!";
-                    }
-
-                case 'save_profile':
-                    if (result.status === 'success') {
-                        return `✅ Perfect! I've saved your profile successfully. Your preferences are now stored and I can provide personalized recommendations based on your goals.`;
-                    } else {
-                        return `⚠️ I had trouble saving your profile: ${result.message}. Please try again.`;
-                    }
-
-                case 'get_recommendations':
-                    if (result.recommendations && result.recommendations.length > 0) {
-                        let response = `🎯 Based on your profile, I found ${result.recommendations_count} personalized recommendations:\n\n`;
-
-                        result.recommendations.forEach((rec, index) => {
-                            const deal = rec.deal;
-                            response += `**${index + 1}. ${deal.provider} - ${deal.certification_name}**\n`;
-                            response += `💡 Why this matches: ${rec.reason}\n`;
-                            response += `📊 Relevance: ${Math.round(rec.relevance_score * 100)}%\n`;
-                            response += `💰 Discount: ${deal.discount_amount}\n\n`;
-                        });
 
                         return response;
-                    } else {
-                        return "I don't have any personalized recommendations yet. Let me discover some deals first, or you can save your profile to get better recommendations!";
-                    }
+                    } else if (result.response_type === 'search_results') {
+                        let response = `**Here's what I found about "${result.query}":**\n\n`;
+                        response += `${result.summary}\n\n`;
 
-                case 'analyze_trends':
-                    if (result.total_deals > 0) {
-                        let response = `📊 Here's my analysis of the certification market:\n\n`;
-                        response += `📈 Total deals analyzed: ${result.total_deals}\n`;
-                        response += `🏆 Best provider: ${result.best_provider}\n`;
-                        response += `💰 Total market savings: $${result.total_market_savings}\n`;
-                        response += `📋 Deals by provider:\n`;
-
-                        Object.entries(result.deals_by_provider).forEach(([provider, count]) => {
-                            response += `   • ${provider}: ${count} deals\n`;
-                        });
+                        if (result.sources && result.sources.length > 0) {
+                            response += `**Sources:**\n`;
+                            result.sources.forEach((source, index) => {
+                                response += `${index + 1}. <a href="${source.link}" target="_blank" rel="noopener noreferrer">${source.title}</a>\n`;
+                            });
+                        }
 
                         return response;
+                    } else if (result.response_type === 'fallback') {
+                        return result.message;
+                    } else if (result.response_type === 'no_results') {
+                        return result.message;
                     } else {
-                        return "I don't have enough data to analyze trends yet. Let me discover some deals first!";
+                        return `I searched for "${result.query || originalMessage}" but couldn't find specific results. Try asking about certification topics like AWS, Azure, Google Cloud, Databricks, or Salesforce.`;
+                    }
+
+                case 'intelligent_search':
+                    if (result.success && result.response_type === 'intelligent_summary') {
+                        let response = `**Here's what I found about "${result.query}":**\n\n`;
+                        response += `${result.summary}\n\n`;
+
+                        if (result.sources && result.sources.length > 0) {
+                            response += `**Sources:**\n`;
+                            result.sources.forEach((source, index) => {
+                                response += `${index + 1}. <a href="${source.link}" target="_blank" rel="noopener noreferrer">${source.title}</a>\n`;
+                            });
+                        }
+
+                        if (result.fallback_used) {
+                            response += `\n*Note: Used fallback search methods as primary API was unavailable.*`;
+                        }
+
+                        return response;
+                    } else if (result.success && result.response_type === 'fallback') {
+                        return result.message + (result.suggestions ? `\n\n**You might also ask about:**\n${result.suggestions.join('\n')}` : '');
+                    } else {
+                        return `I'd be happy to help with that question. Let me search for the most current information... ${result.message || 'Please try rephrasing your question or ask about specific certification providers.'}`;
                     }
 
                 default:
-                    return "I processed your request successfully! How else can I help you with certification deals?";
+                    return "I processed your request successfully! How else can I help you with certification learning resources?";
             }
-        }
-
-        function getMockResponse(message) {
-            const lowerMessage = message.toLowerCase();
-
-            if (lowerMessage.includes('aws') && lowerMessage.includes('deal')) {
-                return formatDealsResponse([
-                    {
-                        provider: 'AWS',
-                        certification: 'Solutions Architect Associate',
-                        discount: '50% off for students',
-                        eligibility: 'Valid student ID required',
-                        expires: '2024-12-31'
-                    },
-                    {
-                        provider: 'AWS',
-                        certification: 'Cloud Practitioner',
-                        discount: 'Free retake voucher',
-                        eligibility: 'First-time test takers',
-                        expires: '2024-11-30'
-                    }
-                ]);
-            }
-
-            if (lowerMessage.includes('career') || lowerMessage.includes('path')) {
-                return formatCareerPathResponse({
-                    summary: 'Recommended path from Developer to Cloud Architect',
-                    timeline: '12-18 months',
-                    phases: [
-                        {
-                            name: 'Foundation (3-4 months)',
-                            certifications: ['AWS Cloud Practitioner', 'Azure Fundamentals'],
-                            focus: 'Cloud basics and core services'
-                        },
-                        {
-                            name: 'Specialization (6-8 months)',
-                            certifications: ['AWS Solutions Architect Associate', 'Azure Administrator'],
-                            focus: 'Architecture and best practices'
-                        },
-                        {
-                            name: 'Mastery (6-12 months)',
-                            certifications: ['AWS Solutions Architect Professional'],
-                            focus: 'Advanced architecture and leadership'
-                        }
-                    ]
-                });
-            }
-
-            if (lowerMessage.includes('devops')) {
-                return `For DevOps roles, I recommend this certification sequence:
-                
-                **Foundation:**
-                - AWS Cloud Practitioner or Azure Fundamentals
-                
-                **Core DevOps:**
-                - AWS Certified DevOps Engineer or Azure DevOps Engineer Expert
-                - Docker Certified Associate
-                - Kubernetes certifications (CKA/CKAD)
-                
-                **Advanced:**
-                - Terraform Associate
-                - Jenkins certifications
-                - Security-focused certifications
-                
-                This path typically takes 8-12 months and costs $800-1200, but I can help you find deals to reduce costs by 30-50%!`;
-            }
-
-            if (lowerMessage.includes('compare') && (lowerMessage.includes('azure') || lowerMessage.includes('aws'))) {
-                return `**AWS vs Azure Certifications Comparison:**
-                
-                **AWS Advantages:**
-                - Larger market share (more job opportunities)
-                - More mature certification program
-                - Better community resources
-                
-                **Azure Advantages:**
-                - Strong enterprise integration
-                - Growing rapidly in market share
-                - Often preferred by Microsoft-centric organizations
-                
-                **My Recommendation:** Start with AWS if you're new to cloud, as it has more resources and job opportunities. Add Azure certifications later for maximum marketability.
-                
-                Would you like me to find current deals for either platform?`;
-            }
-
-            return `I understand you're asking about "${message}". Let me help you with that!
-            
-            I can assist with:
-            - Finding certification deals across AWS, Azure, Google Cloud, Databricks, and Salesforce
-            - Planning your certification career path
-            - Analyzing eligibility requirements
-            - Comparing different certification options
-            
-            Could you be more specific about what you'd like to know?`;
-        }
-
-        function formatDealsResponse(deals) {
-            let response = `I found ${deals.length} great certification deals for you:\n\n`;
-
-            deals.forEach((deal, index) => {
-                response += `**${deal.provider} - ${deal.certification}**\n`;
-                response += `💰 Discount: ${deal.discount}\n`;
-                response += `✅ Eligibility: ${deal.eligibility}\n`;
-                response += `⏰ Expires: ${deal.expires}\n\n`;
-            });
-
-            response += `Would you like me to help you check eligibility for any of these deals or find more options?`;
-
-            return response;
-        }
-
-        function formatCareerPathResponse(path) {
-            let response = `**${path.summary}**\n\n`;
-            response += `⏱️ **Timeline:** ${path.timeline}\n\n`;
-            response += `**Learning Path:**\n\n`;
-
-            path.phases.forEach((phase, index) => {
-                response += `**${phase.name}**\n`;
-                response += `Focus: ${phase.focus}\n`;
-                response += `Certifications: ${phase.certifications.join(', ')}\n\n`;
-            });
-
-            response += `Would you like me to find current deals for any of these certifications or adjust the plan based on your specific background?`;
-
-            return response;
         }
 
         function addMessage(sender, content) {
@@ -842,7 +657,6 @@ What would you like to know about certification deals or career planning?`;
             const messageContent = document.createElement('div');
             messageContent.className = 'message-content';
 
-            // Format message content (convert markdown-like formatting)
             const formattedContent = formatMessageContent(content);
             messageContent.innerHTML = formattedContent;
 
@@ -857,15 +671,13 @@ What would you like to know about certification deals or career planning?`;
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
 
-            // Add to conversation history
             conversationHistory.push({ sender, content });
         }
 
         function formatMessageContent(content) {
             return content
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\n/g, '<br>')
-                .replace(/💰|✅|⏰|⏱️/g, '<span style="font-size: 1.1em;">$&</span>');
+                .replace(/\n/g, '<br>');
         }
 
         function showTyping(show) {

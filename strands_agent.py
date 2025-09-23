@@ -8,6 +8,7 @@ import os
 import json
 import boto3
 import requests
+import time
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
@@ -61,11 +62,11 @@ class CertificationHunterAgent:
             I'm an expert Certification Deal Hunter and Career Advisor AI agent. 
             I help developers and IT professionals:
             
-            🎯 Discover and verify certification deals across AWS, Azure, Google Cloud, Databricks, and Salesforce
-            📊 Analyze complex eligibility requirements and match them to user profiles  
-            🚀 Plan optimal career paths with certification roadmaps
-            💰 Optimize savings by comparing deals across providers
-            🔔 Provide proactive alerts for expiring deals and new opportunities
+            - Discover and verify certification deals across AWS, Azure, Google Cloud, Databricks, and Salesforce
+            - Analyze complex eligibility requirements and match them to user profiles  
+            - Plan optimal career paths with certification roadmaps
+            - Optimize savings by comparing deals across providers
+            - Provide proactive alerts for expiring deals and new opportunities
             
             I use multi-step reasoning for complex certification planning and make autonomous 
             decisions for deal discovery and validation.
@@ -96,7 +97,7 @@ class CertificationHunterAgent:
         if not providers:
             providers = ['AWS', 'Azure', 'Google Cloud', 'Databricks', 'Salesforce']
         
-        print(f"🔍 Discovering deals from {len(providers)} providers...")
+        print(f"INFO: Discovering deals from {len(providers)} providers...")
         
         all_deals = []
         provider_urls = {
@@ -118,7 +119,7 @@ class CertificationHunterAgent:
             ],
             'Salesforce': [
                 'https://trailhead.salesforce.com/en/credentials/certification-vouchers/',
-                'https://trailhead.salesforce.com/en/credentials/',
+                'https://trailheadacademy.salesforce.com/certification-overview',
             ]
         }
         
@@ -154,7 +155,7 @@ class CertificationHunterAgent:
         Returns:
             Eligibility analysis with recommendations
         """
-        print(f"🔍 Analyzing eligibility for deal {deal_id}...")
+        print(f"INFO: Analyzing eligibility for deal {deal_id}...")
         
         # Get deal from DynamoDB
         try:
@@ -190,7 +191,7 @@ class CertificationHunterAgent:
         Returns:
             Detailed career roadmap with certification path
         """
-        print(f"🚀 Creating career roadmap for {user_profile.get('target_role', 'career advancement')}...")
+        print(f"INFO: Creating career roadmap for {user_profile.get('target_role', 'career advancement')}...")
         
         # Use Bedrock to generate comprehensive career path
         roadmap = self._generate_career_roadmap_with_ai(user_profile)
@@ -219,7 +220,7 @@ class CertificationHunterAgent:
         Returns:
             Confirmation of profile save
         """
-        print(f"💾 Saving profile for user {user_profile.get('user_id', 'anonymous')}...")
+        print(f"INFO: Saving profile for user {user_profile.get('user_id', 'anonymous')}...")
         
         try:
             # Add metadata
@@ -251,7 +252,7 @@ class CertificationHunterAgent:
         Returns:
             Personalized recommendations based on user profile and available deals
         """
-        print(f"🎯 Getting personalized recommendations for user {user_id}...")
+        print(f"INFO: Getting personalized recommendations for user {user_id}...")
         
         try:
             # Get user profile
@@ -324,7 +325,7 @@ class CertificationHunterAgent:
         Returns:
             List of expiring deals with alert information
         """
-        print(f"⏰ Checking for deals expiring in the next {days_ahead} days...")
+        print(f"INFO: Checking for deals expiring in the next {days_ahead} days...")
         
         # Get all deals from DynamoDB
         try:
@@ -521,17 +522,190 @@ class CertificationHunterAgent:
         """Find deals expiring within specified days"""
         # Implementation would parse expiry dates and filter
         return []
+    
+    def enhance_search_query(self, user_input: str = None) -> str:
+        """
+        Enhance user input with optimization terms for better certification deal search results
+        
+        Args:
+            user_input: User's search input (provider name, certification type, etc.)
+            
+        Returns:
+            Enhanced search query with current year and certification-specific keywords
+        """
+        # Handle empty or None user input with default search terms
+        if not user_input or user_input.strip() == "":
+            base_query = "certification deals"
+        else:
+            base_query = user_input.strip()
+        
+        # Add current year (2025) and certification-specific keywords to queries
+        optimization_terms = [
+            "latest",
+            "certification",
+            "coupons",
+            "discount",
+            "voucher"
+        ]
+        
+        # Combine base query with optimization terms
+        enhanced_query = f"{base_query} {' '.join(optimization_terms)}"
+        
+        print(f"INFO: Enhanced query: '{user_input}' -> '{enhanced_query}'")
+        
+        return enhanced_query
+
+    def search_google_api(self, query: str, max_retries: int = 3) -> Dict[str, Any]:
+        """
+        Call Google Custom Search API with error handling and retry logic
+        
+        Args:
+            query: Search query string
+            max_retries: Maximum number of retry attempts for rate limiting
+            
+        Returns:
+            Dictionary containing search results or error information
+        """
+        api_key = os.getenv('GOOGLE_SEARCH_API_KEY')
+        search_engine_id = os.getenv('GOOGLE_SEARCH_ENGINE_ID')
+        
+        if not api_key or not search_engine_id:
+            return {
+                'error': 'Google Search API credentials not configured',
+                'success': False,
+                'items': []
+            }
+        
+        if api_key == 'YOUR_GOOGLE_SEARCH_API_KEY' or search_engine_id == 'YOUR_GOOGLE_SEARCH_ENGINE_ID':
+            return {
+                'error': 'Google Search API credentials not properly set (still using placeholder values)',
+                'success': False,
+                'items': []
+            }
+        
+        url = "https://www.googleapis.com/customsearch/v1"
+        params = {
+            'key': api_key,
+            'cx': search_engine_id,
+            'q': query,
+            'num': 10,  # Number of results to return
+            'safe': 'active'  # Safe search
+        }
+        
+        for attempt in range(max_retries):
+            try:
+                print(f"INFO: Searching Google API (attempt {attempt + 1}/{max_retries}): {query}")
+                
+                response = requests.get(url, params=params, timeout=30)
+                
+                # Handle rate limiting (HTTP 429)
+                if response.status_code == 429:
+                    if attempt < max_retries - 1:
+                        # Exponential backoff: wait 2^attempt seconds
+                        wait_time = 2 ** attempt
+                        print(f"⏳ Rate limited. Waiting {wait_time} seconds before retry...")
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        return {
+                            'error': 'Google Search API rate limit exceeded after all retries',
+                            'success': False,
+                            'items': []
+                        }
+                
+                # Handle other HTTP errors
+                if response.status_code != 200:
+                    error_msg = f"Google Search API returned status {response.status_code}"
+                    try:
+                        error_data = response.json()
+                        if 'error' in error_data:
+                            error_msg += f": {error_data['error'].get('message', 'Unknown error')}"
+                    except:
+                        error_msg += f": {response.text[:200]}"
+                    
+                    return {
+                        'error': error_msg,
+                        'success': False,
+                        'items': []
+                    }
+                
+                # Parse successful response
+                try:
+                    search_results = response.json()
+                    
+                    # Validate response structure
+                    if 'items' not in search_results:
+                        return {
+                            'error': 'No search results found',
+                            'success': True,
+                            'items': [],
+                            'searchInformation': search_results.get('searchInformation', {})
+                        }
+                    
+                    print(f"SUCCESS: Found {len(search_results['items'])} search results")
+                    
+                    return {
+                        'success': True,
+                        'items': search_results['items'],
+                        'searchInformation': search_results.get('searchInformation', {}),
+                        'query': query
+                    }
+                    
+                except json.JSONDecodeError as e:
+                    return {
+                        'error': f'Failed to parse Google Search API response: {str(e)}',
+                        'success': False,
+                        'items': []
+                    }
+                
+            except requests.exceptions.Timeout:
+                if attempt < max_retries - 1:
+                    print(f"⏳ Request timeout. Retrying in {2 ** attempt} seconds...")
+                    time.sleep(2 ** attempt)
+                    continue
+                else:
+                    return {
+                        'error': 'Google Search API request timed out after all retries',
+                        'success': False,
+                        'items': []
+                    }
+                    
+            except requests.exceptions.ConnectionError:
+                if attempt < max_retries - 1:
+                    print(f"⏳ Connection error. Retrying in {2 ** attempt} seconds...")
+                    time.sleep(2 ** attempt)
+                    continue
+                else:
+                    return {
+                        'error': 'Failed to connect to Google Search API after all retries',
+                        'success': False,
+                        'items': []
+                    }
+                    
+            except Exception as e:
+                return {
+                    'error': f'Unexpected error calling Google Search API: {str(e)}',
+                    'success': False,
+                    'items': []
+                }
+        
+        # This should never be reached, but just in case
+        return {
+            'error': 'Maximum retries exceeded',
+            'success': False,
+            'items': []
+        }
 
 # Main execution
 def main():
     """Main function to run the Strands Agent"""
-    print("🚀 Starting Certification Hunter Strands Agent...")
+    print("INFO: Starting Certification Hunter Strands Agent...")
     
     # Initialize the agent
     hunter = CertificationHunterAgent()
     
     # Example usage - you can customize this based on your needs
-    print("\n🎯 Example: Discovering certification deals...")
+    print("\nINFO: Example: Discovering certification deals...")
     
     # Run the agent with a sample query
     result = run_agent(
@@ -539,7 +713,7 @@ def main():
         "I'm a Python developer looking to transition to cloud architecture. Can you discover current certification deals and create a career roadmap for me?"
     )
     
-    print("\n✅ Agent Response:")
+    print("\nSUCCESS: Agent Response:")
     print(result)
 
 if __name__ == "__main__":

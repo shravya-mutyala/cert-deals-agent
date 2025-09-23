@@ -14,7 +14,7 @@ def handler(event, context):
     Note: Main functionality moved to strands_agent_lambda
     """
     
-    print("🔍 Scraper function called")
+    print("INFO: Scraper function called")
     print(f"Event: {json.dumps(event, default=str)}")
     
     # For now, return success to avoid breaking the deployment

@@ -32,9 +32,9 @@ cd ..
 echo "Installing Lambda dependencies for local development..."
 pip install boto3 requests beautifulsoup4 lxml
 
-echo "✅ Virtual environment setup complete!"
+echo "SUCCESS: Virtual environment setup complete!"
 echo ""
-echo "📝 To activate the environment in the future:"
+echo "INFO: To activate the environment in the future:"
 echo "   source venv/bin/activate"
 echo ""
 echo "📝 To deactivate:"

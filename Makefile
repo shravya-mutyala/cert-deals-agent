@@ -5,8 +5,8 @@
 # Setup virtual environment and install dependencies
 setup:
 	python3 -m venv venv
-	@echo "✅ Virtual environment created"
-	@echo "📝 Next steps:"
+	@echo "SUCCESS: Virtual environment created"
+	@echo "INFO: Next steps:"
 	@echo "  1. Activate: source venv/bin/activate (Linux/Mac) or venv\\Scripts\\activate.bat (Windows)"
 	@echo "  2. Install: make install"
 	@echo "  3. Deploy: make deploy"
@@ -16,8 +16,8 @@ install:
 	pip install --upgrade pip
 	pip install -r requirements.txt
 	cd cdk && pip install -r requirements.txt
-	@echo "✅ Dependencies installed"
-	@echo "📝 Ready to deploy: make deploy"
+	@echo "SUCCESS: Dependencies installed"
+	@echo "INFO: Ready to deploy: make deploy"
 
 # Deploy to AWS using the main deployment script
 deploy:
@@ -40,7 +40,7 @@ clean:
 	find . -name "response.json" -delete
 	rm -rf lambda_layer/ 2>/dev/null || true
 	rm -rf cdk.out/ 2>/dev/null || true
-	@echo "✅ Cleaned up temporary files"
+	@echo "SUCCESS: Cleaned up temporary files"
 
 # Complete development workflow
 dev: install lint test
@@ -48,7 +48,7 @@ dev: install lint test
 
 # Help
 help:
-	@echo "🎯 Certification Deals Hunter - Development Commands"
+	@echo "Certification Deals Hunter - Development Commands"
 	@echo "=================================================="
 	@echo ""
 	@echo "Quick Start:"

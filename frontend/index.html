@@ -365,7 +365,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎯 Certification Coupon Hunter</h1>
+            <h1>Certification Coupon Hunter</h1>
             <p>Find the best certification discounts matched to your profile</p>
         </div>
 
@@ -410,68 +410,41 @@
             <form id="profileForm">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="userName">Your Name:</label>
+                        <label for="userName">Your Name: *</label>
                         <input type="text" id="userName" placeholder="Enter your name" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="location">Location:</label>
-                        <input type="text" id="location" placeholder="e.g., United States, India, Europe">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="studentStatus">Student Status:</label>
-                        <select id="studentStatus">
+                        <label for="studentStatus">Student Status: *</label>
+                        <select id="studentStatus" required>
+                            <option value="">Select status</option>
                             <option value="false">Not a student</option>
                             <option value="true">Current student</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label for="targetCerts">Target Certifications:</label>
+                        <label for="targetCerts">Target Certification Name: *</label>
                         <input type="text" id="targetCerts"
-                            placeholder="e.g., AWS Solutions Architect, Azure Administrator, GCP Professional, Databricks Data Engineer">
+                            placeholder="e.g., AWS AI Practitioner, Azure Administrator, GCP Professional Cloud Architect"
+                            required>
                     </div>
 
                     <div class="form-group">
-                        <label for="preferredProviders">Preferred Providers:</label>
-                        <input type="text" id="preferredProviders"
-                            placeholder="e.g., AWS, Microsoft, Google Cloud, Salesforce, Databricks">
+                        <label for="preferredProviders">Provider: *</label>
+                        <select id="preferredProviders" required>
+                            <option value="">Select provider</option>
+                            <option value="AWS">AWS</option>
+                            <option value="Microsoft">Microsoft Azure</option>
+                            <option value="Google Cloud">Google Cloud</option>
+                            <option value="Databricks">Databricks</option>
+                            <option value="Salesforce">Salesforce</option>
+                        </select>
                     </div>
                 </div>
 
-                <button type="submit" class="submit-btn">🔍 Find My Certification Deals</button>
+                <button type="submit" class="submit-btn">Find My Certification Deals</button>
             </form>
-        </div>
-
-        <div class="ai-agent-section">
-            <h2 class="ai-agent-title">🤖 Need Personalized Help?</h2>
-            <p class="ai-agent-description">
-                Chat with our AI Certification Agent for personalized career advice, deal recommendations, and
-                certification planning
-            </p>
-            <button class="ai-agent-btn" onclick="openAIAgent()">
-                💬 Chat with AI Agent
-            </button>
-
-            <div class="ai-features">
-                <div class="ai-feature">
-                    <div class="ai-feature-icon">🎯</div>
-                    <div class="ai-feature-text">Personalized Career Planning</div>
-                </div>
-                <div class="ai-feature">
-                    <div class="ai-feature-icon">🔍</div>
-                    <div class="ai-feature-text">Smart Deal Discovery</div>
-                </div>
-                <div class="ai-feature">
-                    <div class="ai-feature-icon">📊</div>
-                    <div class="ai-feature-text">Certification Roadmaps</div>
-                </div>
-                <div class="ai-feature">
-                    <div class="ai-feature-icon">💰</div>
-                    <div class="ai-feature-text">Cost Optimization</div>
-                </div>
-            </div>
         </div>
 
         <div class="offers-section">
@@ -480,6 +453,16 @@
                 <p class="loading">Save your profile to see matched offers...</p>
             </div>
         </div>
+    </div>
+
+    <div class="ai-agent-section">
+        <h2 class="ai-agent-title">🤖 Need personalized help finding good resources to prepare for certifications?</h2>
+        <p class="ai-agent-description">
+            Chat with our AI Agent
+        </p>
+        <button class="ai-agent-btn" onclick="openAIAgent()">
+            Chat with AI Agent
+        </button>
     </div>
 
     <script>
@@ -514,17 +497,23 @@
         document.getElementById('profileForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const userName = document.getElementById('userName').value;
+            const userName = document.getElementById('userName').value.trim();
+            const studentStatus = document.getElementById('studentStatus').value;
+            const targetCert = document.getElementById('targetCerts').value.trim();
+            const provider = document.getElementById('preferredProviders').value;
+
+            // Validate required fields
+            if (!userName || !studentStatus || !targetCert || !provider) {
+                alert('Please fill in all required fields marked with *');
+                return;
+            }
+
             const userId = generateUserId(userName);
-            const location = document.getElementById('location').value;
-            const studentStatus = document.getElementById('studentStatus').value === 'true';
-            const targetCerts = document.getElementById('targetCerts').value.split(',').map(s => s.trim()).filter(s => s);
-            const preferredProviders = document.getElementById('preferredProviders').value.split(',').map(s => s.trim()).filter(s => s);
 
             // Show loading state on button
             const submitBtn = document.querySelector('.submit-btn');
             const originalText = submitBtn.textContent;
-            submitBtn.textContent = '🔄 Finding Deals...';
+            submitBtn.textContent = 'Finding Deals...';
             submitBtn.disabled = true;
 
             // Auto-scroll to offers section with a small delay for better UX
@@ -532,36 +521,19 @@
                 scrollToOffers();
             }, 300);
 
-            // Save profile
             try {
-                document.getElementById('offersContainer').innerHTML = '<p class="loading">Saving profile...</p>';
+                document.getElementById('offersContainer').innerHTML = '<p class="loading">Searching for specific certification deals...</p>';
 
-                // Save user profile using Strands agent
-                const profileResponse = await fetch(API_BASE, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'save_profile',
-                        user_id: userId,
-                        current_role: 'Developer', // You could add this to the form
-                        target_role: 'Cloud Architect', // You could add this to the form
-                        preferred_cloud: preferredProviders[0] || 'AWS' // Use first preferred provider
-                    })
-                });
-
-                if (!profileResponse.ok) throw new Error('Failed to save profile');
-                const profileData = await profileResponse.json();
-                console.log('Profile saved:', profileData);
-
-                // Discover deals using Strands agent
-                document.getElementById('offersContainer').innerHTML = '<p class="loading">Discovering certification deals...</p>';
-
+                // Search for specific certification deals
                 const dealsResponse = await fetch(API_BASE, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'discover_deals',
-                        providers: preferredProviders.length > 0 ? preferredProviders : ['AWS', 'Azure', 'Google Cloud']
+                        provider: provider,
+                        certification_name: targetCert,
+                        student_status: studentStatus === 'true',
+                        user_name: userName
                     })
                 });
 
@@ -569,24 +541,8 @@
                 const dealsData = await dealsResponse.json();
                 console.log('Deals discovered:', dealsData);
 
-                // Get personalized recommendations
-                document.getElementById('offersContainer').innerHTML = '<p class="loading">Getting personalized recommendations...</p>';
-
-                const recommendationsResponse = await fetch(API_BASE, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'get_recommendations',
-                        user_id: userId
-                    })
-                });
-
-                if (!recommendationsResponse.ok) throw new Error('Failed to get recommendations');
-                const recommendationsData = await recommendationsResponse.json();
-                console.log('Recommendations:', recommendationsData);
-
                 // Display the results
-                displayStrandsResults(dealsData.result, recommendationsData.result);
+                displaySpecificResults(dealsData, provider, targetCert);
 
                 // Restore button state
                 submitBtn.textContent = originalText;
@@ -601,6 +557,102 @@
             }
         });
 
+        function displaySpecificResults(dealsData, provider, certificationName) {
+            const container = document.getElementById('offersContainer');
+
+            if (!dealsData || !dealsData.deals || dealsData.deals.length === 0) {
+                container.innerHTML = `
+                    <div class="offer-card">
+                        <h3>No specific deals found for ${certificationName}</h3>
+                        <p>We couldn't find specific deals for this certification, but you can check the official certification page:</p>
+                        <div class="offer-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Official Certification Page</span>
+                                <span class="detail-value">
+                                    <a href="${getOfficialCertificationUrl(provider)}" target="_blank" style="color: #007cba; text-decoration: none; font-weight: bold;">
+                                        Visit ${provider} Certification Page
+                                    </a>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3>Search Results for ${certificationName}</h3>
+                    <p><strong>Provider:</strong> ${provider}</p>
+                    <p><strong>Deals Found:</strong> ${dealsData.deals.length}</p>
+                </div>
+            `;
+
+            // Show discovered deals
+            const dealsHtml = dealsData.deals.map(deal => {
+                return `
+                    <div class="offer-card high-match">
+                        <div class="offer-header">
+                            <span class="offer-provider">${deal.provider}</span>
+                        </div>
+                        
+                        <h3>${deal.certification_name || deal.title || certificationName}</h3>
+                        
+                        ${deal.snippet ? `
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; font-style: italic; color: #666;">
+                                "${deal.snippet}"
+                            </div>
+                        ` : ''}
+                        
+                        <div class="offer-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Source</span>
+                                <span class="detail-value">
+                                    <a href="${deal.source_url || deal.link}" target="_blank" style="color: #007cba; text-decoration: none; font-weight: bold;">
+                                        ${deal.source_name || 'View Details'}
+                                    </a>
+                                </span>
+                            </div>
+                            ${deal.active_challenge ? `
+                                <div class="detail-item">
+                                    <span class="detail-label">Active Challenge</span>
+                                    <span class="detail-value">
+                                        <a href="${deal.challenge_url}" target="_blank" style="color: #ff6b35; text-decoration: none; font-weight: bold;">
+                                            ${deal.active_challenge}
+                                        </a>
+                                    </span>
+                                </div>
+                            ` : ''}
+                            <div class="detail-item">
+                                <span class="detail-label">Official Certification Page</span>
+                                <span class="detail-value">
+                                    <a href="${getOfficialCertificationUrl(provider)}" target="_blank" style="color: #007cba; text-decoration: none; font-weight: bold;">
+                                        Visit ${provider} Certification Page
+                                    </a>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <small>Found: ${new Date().toLocaleDateString()}</small>
+                    </div>
+                `;
+            }).join('');
+
+            html += dealsHtml;
+            container.innerHTML = html;
+        }
+
+        function getOfficialCertificationUrl(provider) {
+            const urls = {
+                'AWS': 'https://aws.amazon.com/certification/',
+                'Microsoft': 'https://docs.microsoft.com/en-us/learn/certifications/',
+                'Google Cloud': 'https://cloud.google.com/training/certification',
+                'Databricks': 'https://www.databricks.com/learn/certification',
+                'Salesforce': 'https://trailheadacademy.salesforce.com/certification-overview'
+            };
+            return urls[provider] || '#';
+        }
+
         function displayStrandsResults(dealsResult, recommendationsResult) {
             const container = document.getElementById('offersContainer');
 
@@ -612,7 +664,7 @@
             // Show summary
             let html = `
                 <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <h3>🎉 Strands Agent Results</h3>
+                    <h3>Results</h3>
                     <p><strong>Deals Discovered:</strong> ${dealsResult.deals_discovered}</p>
                     <p><strong>Deals Stored:</strong> ${dealsResult.deals_stored}</p>
                     <p><strong>Providers Searched:</strong> ${dealsResult.providers_searched.join(', ')}</p>
@@ -622,40 +674,64 @@
 
             // Show discovered deals
             const dealsHtml = dealsResult.deals.map(deal => {
+                // Determine if this is a Google Search result
+                const isGoogleSearch = deal.source_type === 'google_search';
+                const searchIndicator = isGoogleSearch ?
+                    '<span style="background: #4285f4; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem; margin-left: 10px;">Google Search</span>' :
+                    '<span style="background: #666; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem; margin-left: 10px;">Scraped</span>';
+
                 return `
                     <div class="offer-card high-match">
                         <div class="offer-header">
-                            <span class="offer-provider">${deal.provider}</span>
-                            <span class="match-score">Confidence: ${Math.round(deal.confidence_score * 100)}%</span>
+                            <span class="offer-provider">${deal.provider}${searchIndicator}</span>
+                            <span class="match-score">Confidence: ${Math.round((deal.confidence_score || 0) * 100)}%</span>
                         </div>
                         
-                        <h3>${deal.certification_name}</h3>
+                        <h3>${deal.certification_name || deal.title}</h3>
+                        
+                        ${isGoogleSearch && deal.snippet ? `
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; font-style: italic; color: #666;">
+                                "${deal.snippet}"
+                            </div>
+                        ` : ''}
                         
                         <div class="offer-details">
                             <div class="detail-item">
                                 <span class="detail-label">Discount</span>
-                                <span class="detail-value">${deal.discount_amount}</span>
+                                <span class="detail-value">${deal.discount_amount || 'See source'}</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Price</span>
-                                <span class="detail-value">${deal.original_price} → ${deal.discounted_price}</span>
+                                <span class="detail-value">${deal.original_price || 'See source'}${deal.discounted_price ? ' → ' + deal.discounted_price : ''}</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Eligibility</span>
-                                <span class="detail-value">${deal.eligibility}</span>
+                                <span class="detail-value">${deal.eligibility || 'See source for details'}</span>
                             </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Expires</span>
-                                <span class="detail-value">${deal.expiry_date}</span>
-                            </div>
+                            ${deal.expiry_date ? `
+                                <div class="detail-item">
+                                    <span class="detail-label">Expires</span>
+                                    <span class="detail-value">${deal.expiry_date}</span>
+                                </div>
+                            ` : ''}
                             <div class="detail-item">
                                 <span class="detail-label">Quality</span>
-                                <span class="detail-value">${deal.deal_quality}</span>
+                                <span class="detail-value">${deal.deal_quality || 'unknown'}</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Source</span>
-                                <span class="detail-value"><a href="${deal.source_url}" target="_blank">View Details</a></span>
+                                <span class="detail-value">
+                                    <a href="${deal.source_url || deal.deal_url}" target="_blank" style="color: #007cba; text-decoration: none; font-weight: bold;">
+                                        View Details
+                                    </a>
+                                </span>
                             </div>
+                            ${isGoogleSearch && deal.search_query ? `
+                                <div class="detail-item">
+                                    <span class="detail-label">Search Query</span>
+                                    <span class="detail-value" style="font-size: 0.9rem; color: #666;">${deal.search_query}</span>
+                                </div>
+                            ` : ''}
                         </div>
                         
                         <small>Discovered by Strands Agent: ${new Date(deal.discovered_at).toLocaleDateString()}</small>
@@ -667,7 +743,7 @@
             if (recommendationsResult && recommendationsResult.recommendations && recommendationsResult.recommendations.length > 0) {
                 html += `
                     <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                        <h3>🎯 Personalized Recommendations</h3>
+                        <h3>Personalized Recommendations</h3>
                         <p><strong>User Profile:</strong> ${recommendationsResult.user_profile.current_role} → ${recommendationsResult.user_profile.target_role}</p>
                         <p><strong>Preferred Cloud:</strong> ${recommendationsResult.user_profile.preferred_cloud}</p>
                         <p><strong>Recommendations:</strong> ${recommendationsResult.recommendations_count}</p>

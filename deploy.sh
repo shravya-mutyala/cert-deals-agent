@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🚀 Deploying Certification Coupon Hunter to AWS..."
+echo "Deploying Certification Coupon Hunter to AWS..."
 
 # Load environment variables from .env file
 if [ -f .env ]; then
@@ -14,37 +14,37 @@ fi
 echo "Running pre-deployment checks..."
 python pre-deploy-check.py
 if [ $? -ne 0 ]; then
-    echo "❌ Pre-deployment checks failed. Please fix the issues and try again."
+    echo "ERROR: Pre-deployment checks failed. Please fix the issues and try again."
     exit 1
 fi
 
-echo "✅ Pre-deployment checks passed!"
+echo "SUCCESS: Pre-deployment checks passed!"
 
 # Check prerequisites
 echo "Checking prerequisites..."
 if ! command -v aws &> /dev/null; then
-    echo "❌ AWS CLI not found. Please install AWS CLI and configure credentials."
+    echo "ERROR: AWS CLI not found. Please install AWS CLI and configure credentials."
     exit 1
 fi
 
 if ! command -v cdk &> /dev/null; then
-    echo "❌ CDK not found. Please install: npm install -g aws-cdk"
+    echo "ERROR: CDK not found. Please install: npm install -g aws-cdk"
     exit 1
 fi
 
 if ! command -v python3 &> /dev/null; then
-    echo "❌ Python 3 not found. Please install Python 3.8+"
+    echo "ERROR: Python 3 not found. Please install Python 3.8+"
     exit 1
 fi
 
 # Check AWS credentials
 echo "Checking AWS credentials..."
 if ! aws sts get-caller-identity &> /dev/null; then
-    echo "❌ AWS credentials not configured. Run: aws configure"
+    echo "ERROR: AWS credentials not configured. Run: aws configure"
     exit 1
 fi
 
-echo "✅ Prerequisites check passed"
+echo "SUCCESS: Prerequisites check passed"
 
 # Install CDK dependencies
 echo "Installing CDK dependencies..."
@@ -80,8 +80,8 @@ cd ..
 python update-frontend.py
 
 echo ""
-echo "✅ Deployment complete!"
-echo "📋 Deployment Summary:"
+echo "SUCCESS: Deployment complete!"
+echo "INFO: Deployment Summary:"
 echo "   Stack Name: CertificationHunterStack"
 
 # Get final outputs
@@ -100,8 +100,8 @@ if [ ! -z "$WEBSITE_URL" ]; then
 fi
 
 echo ""
-echo "🎉 Your Certification Coupon Hunter is now live!"
-echo "🌐 Open your website: $WEBSITE_URL"
-echo "📝 Test the deployment: python test-scraper.py"
+echo "SUCCESS: Your Certification Coupon Hunter is now live!"
+echo "INFO: Open your website: $WEBSITE_URL"
+echo "INFO: Test the deployment: python test-scraper.py"
 echo ""
-echo "🎯 Ready for your hackathon demo! 🚀"
+echo "SUCCESS: Ready for your hackathon demo!"
