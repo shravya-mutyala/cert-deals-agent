@@ -37,6 +37,16 @@ class CertificationHunterStack(Stack):
             removal_policy=RemovalPolicy.DESTROY
         )
 
+        # New table for learning resources
+        self.learning_resources_table = dynamodb.Table(
+            self, "LearningResourcesTable",
+            table_name="learning-resources",
+            partition_key=dynamodb.Attribute(name="provider", type=dynamodb.AttributeType.STRING),
+            sort_key=dynamodb.Attribute(name="resource_id", type=dynamodb.AttributeType.STRING),
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            removal_policy=RemovalPolicy.DESTROY
+        )
+
         # S3 Bucket for static website hosting
         self.assets_bucket = s3.Bucket(
             self, "AssetsBucket",
@@ -49,6 +59,7 @@ class CertificationHunterStack(Stack):
 
         # Lambda Functions
         self.strands_agent_function = self._create_strands_agent_lambda()
+        self.learning_resources_function = self._create_learning_resources_lambda()
         
         # API Gateway
         self.api = self._create_api()
@@ -70,6 +81,7 @@ class CertificationHunterStack(Stack):
             environment={
                 "OFFERS_TABLE": self.offers_table.table_name,
                 "USERS_TABLE": self.users_table.table_name,
+                "LEARNING_RESOURCES_TABLE": self.learning_resources_table.table_name,
                 "GOOGLE_SEARCH_API_KEY": os.environ.get("GOOGLE_SEARCH_API_KEY", "AIzaSyDCk-_SnedDJTgf3Xk9OCntP_fhkjlgvyU"),
                 "GOOGLE_SEARCH_ENGINE_ID": os.environ.get("GOOGLE_SEARCH_ENGINE_ID", "5054e8a14948642be")
             }
@@ -78,12 +90,32 @@ class CertificationHunterStack(Stack):
         # Grant DynamoDB permissions
         self.offers_table.grant_read_write_data(function)
         self.users_table.grant_read_write_data(function)
+        self.learning_resources_table.grant_read_write_data(function)
         
         # Bedrock permissions (if needed for future enhancements)
         function.add_to_role_policy(iam.PolicyStatement(
             actions=["bedrock:InvokeModel"],
             resources=["*"]
         ))
+        
+        return function
+
+    def _create_learning_resources_lambda(self):
+        """Create Learning Resources Lambda function"""
+        function = _lambda.Function(
+            self, "LearningResourcesFunction",
+            runtime=_lambda.Runtime.PYTHON_3_11,
+            handler="lambda_function.lambda_handler",
+            code=_lambda.Code.from_asset("../lambda/learning_resources_lambda"),
+            timeout=Duration.minutes(2),
+            memory_size=256,
+            environment={
+                "LEARNING_RESOURCES_TABLE": self.learning_resources_table.table_name
+            }
+        )
+        
+        # Grant DynamoDB permissions
+        self.learning_resources_table.grant_read_data(function)
         
         return function
 
@@ -111,6 +143,28 @@ class CertificationHunterStack(Stack):
                     'method.response.header.Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
                     'method.response.header.Access-Control-Allow-Origin': "'*'",
                     'method.response.header.Access-Control-Allow-Methods': "'GET,POST,OPTIONS'"
+                }
+            }],
+            request_templates={'application/json': '{"statusCode": 200}'}
+        ), method_responses=[{
+            'statusCode': '200',
+            'responseParameters': {
+                'method.response.header.Access-Control-Allow-Headers': True,
+                'method.response.header.Access-Control-Allow-Origin': True,
+                'method.response.header.Access-Control-Allow-Methods': True
+            }
+        }])
+        
+        # Learning Resources endpoint
+        resources = api.root.add_resource("learning-resources")
+        resources.add_method("GET", apigateway.LambdaIntegration(self.learning_resources_function))
+        resources.add_method("OPTIONS", apigateway.MockIntegration(
+            integration_responses=[{
+                'statusCode': '200',
+                'responseParameters': {
+                    'method.response.header.Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                    'method.response.header.Access-Control-Allow-Origin': "'*'",
+                    'method.response.header.Access-Control-Allow-Methods': "'GET,OPTIONS'"
                 }
             }],
             request_templates={'application/json': '{"statusCode": 200}'}
@@ -159,6 +213,12 @@ class CertificationHunterStack(Stack):
             self, "UsersTableName",
             value=self.users_table.table_name,
             description="DynamoDB table for users"
+        )
+        
+        CfnOutput(
+            self, "LearningResourcesTableName",
+            value=self.learning_resources_table.table_name,
+            description="DynamoDB table for learning resources"
         )
         
         # Website URL output

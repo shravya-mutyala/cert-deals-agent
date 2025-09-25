@@ -305,7 +305,7 @@
         });
 
         function sendQuickMessage(message) {
-            // Mark as button-triggered for static responses
+            // Mark as button-triggered for dynamic DynamoDB responses
             sendMessage(message, true);
         }
 
@@ -351,21 +351,46 @@
                     case 'help':
                         return getHelpResponse();
 
-                    // NEW: Static learning resources for button-triggered actions
-                    case 'static_resources_aws':
-                        return getStaticAWSResourcesResponse();
+                    // NEW: Dynamic learning resources from DynamoDB for button-triggered actions
+                    case 'dynamic_resources_aws':
+                        action = 'get_learning_resources';
+                        payload = {
+                            action: 'get_learning_resources',
+                            provider: 'AWS'
+                        };
+                        break;
 
-                    case 'static_resources_azure':
-                        return getStaticAzureResourcesResponse();
+                    case 'dynamic_resources_azure':
+                        action = 'get_learning_resources';
+                        payload = {
+                            action: 'get_learning_resources',
+                            provider: 'AZURE'
+                        };
+                        break;
 
-                    case 'static_resources_gcp':
-                        return getStaticGCPResourcesResponse();
+                    case 'dynamic_resources_gcp':
+                        action = 'get_learning_resources';
+                        payload = {
+                            action: 'get_learning_resources',
+                            provider: 'GCP'
+                        };
+                        break;
 
-                    case 'static_resources_salesforce':
-                        return getStaticSalesforceResourcesResponse();
+                    case 'dynamic_resources_salesforce':
+                        action = 'get_learning_resources';
+                        payload = {
+                            action: 'get_learning_resources',
+                            provider: 'SALESFORCE'
+                        };
+                        break;
 
-                    case 'static_resources_databricks':
-                        return getStaticDatabricksResourcesResponse();
+                    case 'dynamic_resources_databricks':
+                        action = 'get_learning_resources';
+                        payload = {
+                            action: 'get_learning_resources',
+                            provider: 'DATABRICKS'
+                        };
+                        break;
 
                     // Google CSE search for free-form queries
                     case 'google_search':
@@ -451,13 +476,13 @@
         function detectUserIntent(message, isButtonTriggered = false) {
             const lowerMessage = message.toLowerCase();
 
-            // If triggered by button, use new static resource responses
+            // If triggered by button, use new dynamic resource responses from DynamoDB
             if (isButtonTriggered) {
-                if (lowerMessage.includes('learning aws')) return { type: 'static_resources_aws' };
-                if (lowerMessage.includes('learning azure')) return { type: 'static_resources_azure' };
-                if (lowerMessage.includes('learning google cloud')) return { type: 'static_resources_gcp' };
-                if (lowerMessage.includes('learning salesforce')) return { type: 'static_resources_salesforce' };
-                if (lowerMessage.includes('learning databricks')) return { type: 'static_resources_databricks' };
+                if (lowerMessage.includes('learning aws')) return { type: 'dynamic_resources_aws' };
+                if (lowerMessage.includes('learning azure')) return { type: 'dynamic_resources_azure' };
+                if (lowerMessage.includes('learning google cloud')) return { type: 'dynamic_resources_gcp' };
+                if (lowerMessage.includes('learning salesforce')) return { type: 'dynamic_resources_salesforce' };
+                if (lowerMessage.includes('learning databricks')) return { type: 'dynamic_resources_databricks' };
             }
 
             // Keep basic static responses for simple interactions
@@ -481,54 +506,11 @@
             return `I can share official learning portals, docs, and workshops for major providers. Try:\n\n**Find resources for learning AWS**\n**Find resources for learning Azure**\n**Find resources for learning Google Cloud**\n**Find resources for learning Salesforce**\n**Find resources for learning Databricks**`;
         }
 
-        // ---------- NEW: Static resource responses with clickable links ----------
+        // All hardcoded resource functions removed - now using dynamic DynamoDB data
 
-        function getStaticAWSResourcesResponse() {
-            return `**Official AWS Learning Resources**\n\n
-• <a href="https://skillbuilder.aws/" target="_blank" rel="noopener noreferrer">AWS Skill Builder</a> — on-demand courses & learning plans<br>
-• <a href="https://aws.amazon.com/builder/" target="_blank" rel="noopener noreferrer">AWS Builder Labs</a> — guided hands-on labs<br>
-• <a href="https://aws.amazon.com/education/awseducate/" target="_blank" rel="noopener noreferrer">AWS Educate</a> — free beginner content for students/learners<br>
-• <a href="https://workshops.aws/" target="_blank" rel="noopener noreferrer">AWS Workshops</a> — curated, hands-on workshops<br>
-• <a href="https://docs.aws.amazon.com/" target="_blank" rel="noopener noreferrer">AWS Documentation</a> — service docs, tutorials, best practices<br>
-• <a href="https://aws.amazon.com/certification/" target="_blank" rel="noopener noreferrer">AWS Certification</a> — paths, exam guides, prep\n\n
-Want anything more specific (e.g., Architect vs. Data)?`;
-        }
 
-        function getStaticAzureResourcesResponse() {
-            return `**Official Microsoft Azure Learning Resources**\n\n
-• <a href="https://learn.microsoft.com/training/" target="_blank" rel="noopener noreferrer">Microsoft Learn</a> — free interactive modules & learning paths<br>
-• <a href="https://learn.microsoft.com/azure/" target="_blank" rel="noopener noreferrer">Azure Documentation</a> — service docs, samples, quickstarts<br>
-• <a href="https://microsoft.github.io/WhatTheHack/" target="_blank" rel="noopener noreferrer">What The Hack</a> — open-source workshop-style scenarios<br>
-• <a href="https://learn.microsoft.com/training/azure/" target="_blank" rel="noopener noreferrer">Azure Learning Paths</a> — curated Azure tracks\n\n
-Need resources for a specific role (e.g., Administrator, Developer)?`;
-        }
 
-        function getStaticGCPResourcesResponse() {
-            return `**Official Google Cloud Learning Resources**\n\n
-• <a href="https://www.cloudskillsboost.google/" target="_blank" rel="noopener noreferrer">Cloud Skills Boost</a> — hands-on labs, quests, and courses<br>
-• <a href="https://cloud.google.com/training" target="_blank" rel="noopener noreferrer">Google Cloud Training</a> — learning paths & instructor-led training<br>
-• <a href="https://cloud.google.com/docs" target="_blank" rel="noopener noreferrer">Google Cloud Docs</a> — product docs & quickstarts<br>
-• <a href="https://cloud.google.com/certification" target="_blank" rel="noopener noreferrer">Google Cloud Certification</a> — paths, exam guides, prep\n\n
-Want Data/ML-specific tracks? I can point you to the right quests.`;
-        }
 
-        function getStaticSalesforceResourcesResponse() {
-            return `**Official Salesforce Learning Resources (Trailhead)**\n\n
-• <a href="https://trailhead.salesforce.com/" target="_blank" rel="noopener noreferrer">Trailhead</a> — free, gamified learning modules & trails<br>
-• <a href="https://trailheadacademy.salesforce.com/certification-overview" target="_blank" rel="noopener noreferrer">Salesforce Credentials</a> — certifications & exam guides<br>
-• <a href="https://help.salesforce.com/s/" target="_blank" rel="noopener noreferrer">Salesforce Help & Docs</a> — official product documentation<br>
-• <a href="https://trailhead.salesforce.com/superbadges" target="_blank" rel="noopener noreferrer">Superbadges</a> — hands-on, scenario-based challenges\n\n
-Tell me your role (Admin/Dev/Consultant) and I’ll suggest a Trailmix.`;
-        }
-
-        function getStaticDatabricksResourcesResponse() {
-            return `**Official Databricks Learning Resources**\n\n
-• <a href="https://www.databricks.com/databricks-academy-labs" target="_blank" rel="noopener noreferrer">Databricks Academy Labs</a> — learning paths, courses, and exams<br>
-• <a href="https://docs.databricks.com/" target="_blank" rel="noopener noreferrer">Databricks Documentation</a> — product docs & quickstarts<br>
-• <a href="https://www.databricks.com/learn" target="_blank" rel="noopener noreferrer">Learn on Databricks</a> — self-paced content & webinars<br>
-• <a href="https://www.databricks.com/resources?type=workshop" target="_blank" rel="noopener noreferrer">Workshops</a> — upcoming workshops & hands-on sessions\n\n
-Looking for Data Engineer vs. ML Engineer tracks? I can tailor links.`;
-        }
 
         // ----------------------------------------------------------------------
 
@@ -576,6 +558,24 @@ The best certification depends on your goals. Start with fundamentals, then spec
             console.log('INFO: Formatting response for action:', action);
 
             switch (action) {
+                case 'get_learning_resources':
+                    if (result.response_type === 'learning_resources') {
+                        let response = `**Official ${result.provider} Learning Resources**\n\n`;
+
+                        if (result.resources && result.resources.length > 0) {
+                            result.resources.forEach((resource, index) => {
+                                response += `• <a href="${resource.url}" target="_blank" rel="noopener noreferrer">${resource.name}</a> — ${resource.description}<br>\n`;
+                            });
+                            response += `\nWant anything more specific? Just ask!`;
+                        } else {
+                            response += `No resources found for ${result.provider}. Please try another provider.`;
+                        }
+
+                        return response;
+                    } else {
+                        return `I retrieved learning resources but couldn't format them properly. Please try again.`;
+                    }
+
                 case 'google_search':
                     if (result.response_type === 'deal_results') {
                         let response = `**${result.message}**\n\n`;

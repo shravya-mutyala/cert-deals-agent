@@ -58,10 +58,13 @@ def lambda_handler(event, context):
         elif action == 'intelligent_search' or action == 'google_search':
             print(f"INFO: Routing to Google search handler")
             return handle_google_search(event)
+        elif action == 'get_learning_resources':
+            print(f"INFO: Routing to learning resources handler")
+            return handle_get_learning_resources(event)
         else:
             print(f"ERROR: Unknown action received: {action}")
-            print(f"ERROR: Available actions: discover_deals, get_recommendations, save_user_profile, save_profile, analyze_trends, intelligent_search, google_search")
-            return create_error_response(f"Unknown action: {action}. Available actions: discover_deals, get_recommendations, save_user_profile, analyze_trends, google_search", 400)
+            print(f"ERROR: Available actions: discover_deals, get_recommendations, save_user_profile, save_profile, analyze_trends, intelligent_search, google_search, get_learning_resources")
+            return create_error_response(f"Unknown action: {action}. Available actions: discover_deals, get_recommendations, save_user_profile, analyze_trends, google_search, get_learning_resources", 400)
             
     except Exception as e:
         print(f"ERROR: Lambda handler error: {e}")
@@ -155,6 +158,68 @@ def handle_analyze_trends(event):
         },
         'body': json.dumps(result, cls=DecimalEncoder)
     }
+
+
+def handle_get_learning_resources(event):
+    """Handle learning resources requests"""
+    print(f"INFO: Learning resources handler called with event: {json.dumps(event, default=str)}")
+    
+    provider = event.get('provider', '').upper()
+    
+    if not provider:
+        return create_error_response("Provider is required. Use: AWS, AZURE, GCP, SALESFORCE, or DATABRICKS", 400)
+    
+    try:
+        import boto3
+        from boto3.dynamodb.conditions import Key
+        
+        # Initialize DynamoDB
+        dynamodb = boto3.resource('dynamodb')
+        table_name = 'learning-resources'
+        table = dynamodb.Table(table_name)
+        
+        # Query resources for the specified provider
+        response = table.query(
+            KeyConditionExpression=Key('provider').eq(provider)
+        )
+        
+        resources = response.get('Items', [])
+        
+        # Format resources for frontend
+        formatted_resources = []
+        for resource in resources:
+            formatted_resources.append({
+                'name': resource['name'],
+                'url': resource['url'],
+                'description': resource['description'],
+                'category': resource.get('category', 'General')
+            })
+        
+        result = {
+            'response_type': 'learning_resources',
+            'provider': provider,
+            'resources': formatted_resources,
+            'count': len(resources),
+            'message': f'Found {len(resources)} learning resources for {provider}'
+        }
+        
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+                'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS'
+            },
+            'body': json.dumps({
+                'success': True,
+                'result': result
+            }, cls=DecimalEncoder)
+        }
+        
+    except Exception as e:
+        print(f"ERROR: Learning resources handler error: {e}")
+        return create_error_response(f"Failed to retrieve learning resources: {str(e)}", 500)
 
 
 def handle_google_search(event):

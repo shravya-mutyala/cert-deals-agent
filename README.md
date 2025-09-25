@@ -163,7 +163,7 @@ python -c "from lambda.strands_agent_lambda.lambda_function import lambda_handle
 3. **Matching**: AI-powered matching → personalized recommendations
 4. **Analytics**: Usage patterns and deal effectiveness tracking
 
-## 🔒 Security
+##  Security
 
 - CORS enabled for frontend access
 - Environment variables for sensitive configuration
@@ -179,11 +179,11 @@ python deploy_strands_to_aws.py
 ```
 
 This script:
-- ✅ Checks prerequisites
-- ✅ Installs dependencies
-- ✅ Deploys CDK infrastructure
-- ✅ Tests the deployment
-- ✅ Provides endpoint URLs
+-  Checks prerequisites
+-  Installs dependencies
+-  Deploys CDK infrastructure
+-  Tests the deployment
+-  Provides endpoint URLs
 
 ### Manual Deployment
 

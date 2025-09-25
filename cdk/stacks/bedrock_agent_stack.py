@@ -122,6 +122,16 @@ You are an expert Certification Deal Hunter and Career Advisor AI agent. Your mi
             description="AI-powered career path planning"
         )
         
+        # 3. Learning Resources Tool
+        learning_resources_lambda = _lambda.Function(
+            self, "LearningResourcesTool",
+            runtime=_lambda.Runtime.PYTHON_3_11,
+            handler="learning_resources.handler",
+            code=_lambda.Code.from_asset("lambda/agent_tools"),
+            timeout=Duration.minutes(2),
+            description="Retrieve learning resources from DynamoDB"
+        )
+        
         bedrock.CfnAgentActionGroup(
             self, "CareerPlannerActionGroup",
             agent_id=self.agent.attr_agent_id,
@@ -163,6 +173,50 @@ You are an expert Certification Deal Hunter and Career Advisor AI agent. Your mi
             }
         )
         
+        # 3. Learning Resources Action Group
+        bedrock.CfnAgentActionGroup(
+            self, "LearningResourcesActionGroup",
+            agent_id=self.agent.attr_agent_id,
+            agent_version="DRAFT",
+            action_group_name="learning_resources",
+            description="Get learning resources for cloud providers",
+            action_group_executor={
+                "lambda": learning_resources_lambda.function_arn
+            },
+            api_schema={
+                "payload": """{
+                    "openapi": "3.0.0",
+                    "info": {"title": "Learning Resources API", "version": "1.0.0"},
+                    "paths": {
+                        "/get_resources": {
+                            "post": {
+                                "description": "Get learning resources for specified provider",
+                                "requestBody": {
+                                    "required": true,
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "provider": {
+                                                        "type": "string",
+                                                        "enum": ["AWS", "AZURE", "GCP", "SALESFORCE", "DATABRICKS"],
+                                                        "description": "Cloud provider name"
+                                                    }
+                                                },
+                                                "required": ["provider"]
+                                            }
+                                        }
+                                    }
+                                },
+                                "responses": {"200": {"description": "Learning resources retrieved successfully"}}
+                            }
+                        }
+                    }
+                }"""
+            }
+        )
+        
         # Grant Lambda invoke permissions
         web_discovery_lambda.add_permission(
             "BedrockAgentInvoke",
@@ -172,6 +226,12 @@ You are an expert Certification Deal Hunter and Career Advisor AI agent. Your mi
         
         career_planner_lambda.add_permission(
             "BedrockAgentInvoke", 
+            principal=iam.ServicePrincipal("bedrock.amazonaws.com"),
+            action="lambda:InvokeFunction"
+        )
+        
+        learning_resources_lambda.add_permission(
+            "BedrockAgentInvoke",
             principal=iam.ServicePrincipal("bedrock.amazonaws.com"),
             action="lambda:InvokeFunction"
         )
