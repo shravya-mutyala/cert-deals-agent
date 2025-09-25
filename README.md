@@ -72,7 +72,7 @@ After deployment, you'll get:
 
 ```
 cert-deals-agent/
-├── 📁 frontend/                 # Web application
+├── 📁 frontend/                # Web application
 │   ├── index.html              # Main application interface
 │   ├── agent-chat.html         # AI chat interface
 │   └── logos/                  # Provider logos and assets
@@ -189,7 +189,7 @@ This script:
 
 ```bash
 cd cdk
-cdk deploy CertificationHunterStack --require-approval never
+cdk deploy CertificationHunterStack
 ```
 
 ## 🐛 Troubleshooting
@@ -222,9 +222,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - AWS for serverless infrastructure
 - Certification providers for deal information
 - Open source community for tools and libraries
-
----
-
-**Built with ❤️ for the developer community**
-
-Need help? Open an issue or check the documentation in the `docs/` folder.
