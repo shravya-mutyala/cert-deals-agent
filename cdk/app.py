@@ -8,7 +8,7 @@ from stacks.certification_hunter_stack import CertificationHunterStack
 
 app = cdk.App()
 
-# Deploy the main certification hunter stack
+# Deploy the main certification hunter stack first
 CertificationHunterStack(app, "CertificationHunterStack")
 
 app.synth()
