@@ -141,6 +141,25 @@ lambda/strands_agent_lambda/lambda_function_backup.py
 lambda/**/__pycache__/
 lambda/**/*.pyc
 
+# Bedrock chat lambda dependencies
+lambda/bedrock_chat_lambda/*/
+lambda/bedrock_chat_lambda/*-*.dist-info/
+lambda/bedrock_chat_lambda/boto*/
+lambda/bedrock_chat_lambda/certifi/
+lambda/bedrock_chat_lambda/charset_normalizer/
+lambda/bedrock_chat_lambda/dateutil/
+lambda/bedrock_chat_lambda/idna/
+lambda/bedrock_chat_lambda/jmespath/
+lambda/bedrock_chat_lambda/requests/
+lambda/bedrock_chat_lambda/s3transfer/
+lambda/bedrock_chat_lambda/six.py
+lambda/bedrock_chat_lambda/urllib3/
+lambda/bedrock_chat_lambda/bin/
+
+# Agent tools dependencies (if any get installed)
+lambda/agent_tools/*/
+lambda/agent_tools/*-*.dist-info/
+
 # Environment variables
 .env
 .env.local

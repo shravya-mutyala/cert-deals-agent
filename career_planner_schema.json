@@ -1,0 +1,68 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Career Planner API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/plan_path": {
+      "post": {
+        "operationId": "POST_career_planner_plan_path",
+        "description": "Generate certification roadmap for career goals",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "current_role": {
+                    "type": "string",
+                    "description": "Current job role"
+                  },
+                  "target_role": {
+                    "type": "string",
+                    "description": "Target job role"
+                  },
+                  "experience_level": {
+                    "type": "string",
+                    "enum": ["beginner", "intermediate", "advanced"],
+                    "description": "Experience level"
+                  },
+                  "preferred_cloud": {
+                    "type": "string",
+                    "enum": ["AWS", "AZURE", "GCP", "SALESFORCE", "DATABRICKS"],
+                    "description": "Preferred cloud provider"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Career path generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "career_path": {
+                      "type": "object"
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

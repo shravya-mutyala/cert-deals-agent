@@ -1,0 +1,64 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Web Discovery API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/discover_deals": {
+      "post": {
+        "operationId": "POST_web_discovery_discover_deals",
+        "description": "Discover certification deals, challenges, and promotions from specified cloud providers",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "providers": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "AWS",
+                        "AZURE",
+                        "GCP",
+                        "SALESFORCE",
+                        "DATABRICKS"
+                      ]
+                    },
+                    "description": "List of cloud providers to search for deals"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Certification deals and challenges discovered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "deals": {
+                      "type": "array"
+                    },
+                    "total_found": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

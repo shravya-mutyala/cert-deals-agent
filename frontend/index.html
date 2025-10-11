@@ -359,6 +359,228 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Chat Widget Styles */
+        .chat-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 400px;
+            height: 500px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .chat-widget-header {
+            background: #007cba;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-widget-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .chat-widget-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        .chat-control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .chat-widget-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-widget-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            max-height: 300px;
+        }
+
+        .chat-message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .chat-message.user {
+            justify-content: flex-end;
+        }
+
+        .chat-message.agent {
+            justify-content: flex-start;
+        }
+
+        .chat-message-content {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            word-wrap: break-word;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .chat-message.user .chat-message-content {
+            background: #007cba;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .chat-message.agent .chat-message-content {
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-bottom-left-radius: 5px;
+            color: #333;
+        }
+
+        .chat-message-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin: 0 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 0.8rem;
+        }
+
+        .user-avatar {
+            background: #28a745;
+        }
+
+        .agent-avatar {
+            background: #007cba;
+        }
+
+        .chat-widget-input {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #e1e5e9;
+            border-radius: 0 0 15px 15px;
+        }
+
+        .chat-input-form {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: #007cba;
+        }
+
+        .chat-send-button {
+            background: #007cba;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        .chat-send-button:hover {
+            background: #005a87;
+        }
+
+        .chat-send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .chat-typing-indicator {
+            display: none;
+            padding: 10px 15px;
+            font-style: italic;
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .chat-quick-actions {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .chat-quick-action {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 15px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .chat-quick-action:hover {
+            background: #007cba;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .chat-widget {
+                width: 350px;
+                right: 10px;
+                bottom: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .chat-widget {
+                width: calc(100vw - 20px);
+                right: 10px;
+                left: 10px;
+                bottom: 10px;
+            }
+        }
     </style>
 </head>
 
@@ -406,7 +628,8 @@
         </div>
 
         <div class="ai-agent-section">
-            <h2 class="ai-agent-title">🤖 Need personalized help finding good resources to prepare for certifications?</h2>
+            <h2 class="ai-agent-title">🤖 Need personalized help finding good resources to prepare for certifications?
+            </h2>
             <p class="ai-agent-description">
                 Chat with our AI Agent
             </p>
@@ -465,8 +688,68 @@
         </div>
     </div>
 
+    <!-- Chat Widget -->
+    <div class="chat-widget" id="chatWidget">
+        <div class="chat-widget-header">
+            <div class="chat-widget-title">🤖 AI Certification Agent</div>
+            <div class="chat-widget-controls">
+                <button class="chat-control-btn" id="minimizeBtn" onclick="minimizeChatWidget()"
+                    title="Minimize">−</button>
+                <button class="chat-control-btn" onclick="closeChatWidget()" title="Close">×</button>
+            </div>
+        </div>
+
+        <div class="chat-widget-body" id="chatBody">
+            <div class="chat-widget-messages" id="chatWidgetMessages">
+                <div class="chat-message agent">
+                    <div class="chat-message-avatar agent-avatar">AI</div>
+                    <div class="chat-message-content">
+                        <p>Hello! I'm your AI Certification Agent. I can help you:</p>
+                        <ul style="margin: 5px 0; padding-left: 15px; font-size: 0.8rem;">
+                            <li>Find official learning resources</li>
+                            <li>Search certification information</li>
+                            <li>Plan your certification path</li>
+                            <li>Analyze requirements</li>
+                        </ul>
+                        <p style="font-size: 0.8rem;">Use the buttons below or ask me anything!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-typing-indicator" id="chatTypingIndicator">
+                Agent is thinking...
+            </div>
+
+            <div class="chat-widget-input">
+                <div class="chat-quick-actions">
+                    <div class="chat-quick-action" onclick="sendQuickChatMessage('Find resources for learning AWS')">AWS
+                    </div>
+                    <div class="chat-quick-action" onclick="sendQuickChatMessage('Find resources for learning Azure')">
+                        Azure</div>
+                    <div class="chat-quick-action"
+                        onclick="sendQuickChatMessage('Find resources for learning Google Cloud')">GCP</div>
+                    <div class="chat-quick-action"
+                        onclick="sendQuickChatMessage('Find resources for learning Salesforce')">Salesforce</div>
+                    <div class="chat-quick-action"
+                        onclick="sendQuickChatMessage('Find resources for learning Databricks')">Databricks</div>
+                </div>
+
+                <form class="chat-input-form" id="chatWidgetForm">
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Ask about certifications..."
+                        required />
+                    <button type="submit" class="chat-send-button" id="chatSendButton">
+                        ➤
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const API_BASE = 'https://ehvx4tl0lc.execute-api.us-east-1.amazonaws.com/prod/strands';
+        // Primary API: Bedrock Agent with Strands fallback
+        const BEDROCK_API = 'https://dxivqp5s1f.execute-api.us-east-1.amazonaws.com/prod/chat';
+        // Fallback API: Original Strands API
+        const STRANDS_API = 'https://ehvx4tl0lc.execute-api.us-east-1.amazonaws.com/prod/strands';
 
         // Generate user ID from name
         function generateUserId(name) {
@@ -524,16 +807,12 @@
             try {
                 document.getElementById('offersContainer').innerHTML = '<p class="loading">Searching for specific certification deals...</p>';
 
-                // Search for specific certification deals
-                const dealsResponse = await fetch(API_BASE, {
+                // Search for specific certification deals using Bedrock Agent
+                const dealsResponse = await fetch(BEDROCK_API, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        action: 'discover_deals',
-                        provider: provider,
-                        certification_name: targetCert,
-                        student_status: studentStatus === 'true',
-                        user_name: userName
+                        message: `Find certification deals for ${targetCert} from ${provider}. Student status: ${studentStatus === 'true' ? 'Yes' : 'No'}`
                     })
                 });
 

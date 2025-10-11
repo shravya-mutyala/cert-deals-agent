@@ -13,23 +13,44 @@ def handler(event, context):
         # Parse the event from Bedrock Agent
         print(f"Received event: {json.dumps(event)}")
         
-        # Extract parameters from the agent request
-        parameters = event.get('parameters', [])
+        # Extract parameters from Bedrock Agent request
         provider = None
         
-        # Find the provider parameter
-        for param in parameters:
-            if param.get('name') == 'provider':
-                provider = param.get('value', '').upper()
-                break
+        # Handle Bedrock Agent format
+        if 'requestBody' in event:
+            request_body = event['requestBody']
+            if 'content' in request_body and 'application/json' in request_body['content']:
+                properties = request_body['content']['application/json'].get('properties', [])
+                for prop in properties:
+                    if prop.get('name') == 'provider':
+                        provider = prop.get('value', '').upper()
+                        break
+        
+        # Handle legacy format
+        if not provider:
+            parameters = event.get('parameters', [])
+            for param in parameters:
+                if param.get('name') == 'provider':
+                    provider = param.get('value', '').upper()
+                    break
         
         if not provider:
             return {
-                'statusCode': 400,
-                'body': json.dumps({
-                    'error': 'Provider parameter is required',
-                    'message': 'Please specify a provider: AWS, AZURE, GCP, SALESFORCE, or DATABRICKS'
-                })
+                'messageVersion': '1.0',
+                'response': {
+                    'actionGroup': event.get('actionGroup', 'learning_resources'),
+                    'apiPath': event.get('apiPath', '/get_resources'),
+                    'httpMethod': event.get('httpMethod', 'POST'),
+                    'httpStatusCode': 400,
+                    'responseBody': {
+                        'application/json': {
+                            'body': json.dumps({
+                                'error': 'Provider parameter is required',
+                                'message': 'Please specify a provider: AWS, AZURE, GCP, SALESFORCE, or DATABRICKS'
+                            })
+                        }
+                    }
+                }
             }
         
         # Initialize DynamoDB
@@ -46,12 +67,22 @@ def handler(event, context):
         
         if not resources:
             return {
-                'statusCode': 200,
-                'body': json.dumps({
-                    'provider': provider,
-                    'message': f'No learning resources found for {provider}',
-                    'resources': []
-                })
+                'messageVersion': '1.0',
+                'response': {
+                    'actionGroup': event.get('actionGroup', 'learning_resources'),
+                    'apiPath': event.get('apiPath', '/get_resources'),
+                    'httpMethod': event.get('httpMethod', 'POST'),
+                    'httpStatusCode': 200,
+                    'responseBody': {
+                        'application/json': {
+                            'body': json.dumps({
+                                'provider': provider,
+                                'message': f'No learning resources found for {provider}',
+                                'resources': []
+                            })
+                        }
+                    }
+                }
             }
         
         # Format resources for the agent
@@ -64,23 +95,45 @@ def handler(event, context):
                 'category': resource.get('category', 'General')
             })
         
-        # Return formatted response for Bedrock Agent
+        # Format response for Bedrock Agent
+        response_body = {
+            'provider': provider,
+            'message': f'Found {len(resources)} learning resources for {provider}',
+            'resources': formatted_resources,
+            'count': len(resources)
+        }
+        
         return {
-            'statusCode': 200,
-            'body': json.dumps({
-                'provider': provider,
-                'message': f'Found {len(resources)} learning resources for {provider}',
-                'resources': formatted_resources,
-                'count': len(resources)
-            })
+            'messageVersion': '1.0',
+            'response': {
+                'actionGroup': event.get('actionGroup', 'learning_resources'),
+                'apiPath': event.get('apiPath', '/get_resources'),
+                'httpMethod': event.get('httpMethod', 'POST'),
+                'httpStatusCode': 200,
+                'responseBody': {
+                    'application/json': {
+                        'body': json.dumps(response_body)
+                    }
+                }
+            }
         }
         
     except Exception as e:
         print(f"Error in learning_resources handler: {str(e)}")
         return {
-            'statusCode': 500,
-            'body': json.dumps({
-                'error': str(e),
-                'message': 'Failed to retrieve learning resources'
-            })
+            'messageVersion': '1.0',
+            'response': {
+                'actionGroup': event.get('actionGroup', 'learning_resources'),
+                'apiPath': event.get('apiPath', '/get_resources'),
+                'httpMethod': event.get('httpMethod', 'POST'),
+                'httpStatusCode': 500,
+                'responseBody': {
+                    'application/json': {
+                        'body': json.dumps({
+                            'error': str(e),
+                            'message': 'Failed to retrieve learning resources'
+                        })
+                    }
+                }
+            }
         }
